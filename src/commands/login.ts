@@ -46,7 +46,7 @@ export async function login() {
 
     server.listen(PORT, () => {
       // Open browser
-      open(authUrl).catch(() => {
+      open(authUrl, { app: { name: "google chrome" } }).catch(() => {
         spinner.stop();
         console.log(
           chalk.yellow(
