@@ -1,54 +1,74 @@
-import { createInterface } from "readline";
 import ora from "ora";
 import chalk from "chalk";
 import { requireAuth } from "../lib/credentials.js";
 import { pullConfig } from "../lib/api.js";
+import { readClaudeConfig } from "../lib/config-reader.js";
 import { writeClaudeConfig } from "../lib/config-writer.js";
+import { diffConfigs, formatDiff } from "../lib/diff.js";
+import { mergeConfigs } from "../lib/merge.js";
+import { confirm } from "../lib/prompt.js";
 import type { ConfigData } from "../types/index.js";
 
-function confirm(message: string): Promise<boolean> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise((resolve) => {
-    rl.question(`${message} (y/n) `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === "y");
-    });
-  });
-}
-
-export async function pull() {
+export async function pull(options: { force?: boolean }) {
   const creds = requireAuth();
 
-  const confirmed = await confirm(
-    chalk.yellow(
-      "This will overwrite your local ~/.claude config. Continue?"
-    )
-  );
+  // Read local config
+  const localData = readClaudeConfig();
 
-  if (!confirmed) {
-    console.log("Cancelled.");
-    return;
-  }
-
-  const spinner = ora("Pulling config...").start();
-
+  // Fetch cloud config
+  const spinner = ora("Fetching cloud config...").start();
+  let cloudConfig;
   try {
-    const result = await pullConfig(creds, "default");
-    const backupPath = writeClaudeConfig(result.data as ConfigData);
-
-    if (backupPath) {
-      spinner.succeed(
-        chalk.green(
-          `Config pulled (v${result.version}). Backup saved to ${backupPath}`
-        )
-      );
-    } else {
-      spinner.succeed(chalk.green(`Config pulled (v${result.version})`));
-    }
+    cloudConfig = await pullConfig(creds, "default");
   } catch (err) {
     spinner.fail(
       chalk.red(err instanceof Error ? err.message : "Failed to pull config")
     );
     process.exit(1);
+  }
+  const cloudData = (cloudConfig.data as ConfigData) ?? {};
+  spinner.stop();
+
+  let dataToWrite: ConfigData;
+  let forceWrite = false;
+
+  if (options.force) {
+    // Force: cloud fully overwrites local
+    const diff = diffConfigs(localData, cloudData);
+    if (!diff.hasChanges) {
+      console.log(chalk.gray("No changes to pull."));
+      return;
+    }
+    console.log(formatDiff(diff, "pull"));
+    console.log(chalk.yellow("  --force: Local config will be fully overwritten with cloud config.\n"));
+    dataToWrite = cloudData;
+    forceWrite = true;
+  } else {
+    // Merge: cloud on top of local (cloud wins, local-only preserved)
+    const merged = mergeConfigs(localData, cloudData);
+    const diff = diffConfigs(localData, merged);
+    if (!diff.hasChanges) {
+      console.log(chalk.gray("No changes to pull."));
+      return;
+    }
+    console.log(formatDiff(diff, "pull"));
+    dataToWrite = merged;
+  }
+
+  const confirmed = await confirm(chalk.yellow("Apply these changes locally?"));
+  if (!confirmed) {
+    console.log("Cancelled.");
+    return;
+  }
+
+  const writeSpinner = ora("Writing config...").start();
+  const backupPath = writeClaudeConfig(dataToWrite, { force: forceWrite });
+
+  if (backupPath) {
+    writeSpinner.succeed(
+      chalk.green(`Config pulled (v${cloudConfig.version}). Backup: ${backupPath}`)
+    );
+  } else {
+    writeSpinner.succeed(chalk.green(`Config pulled (v${cloudConfig.version})`));
   }
 }

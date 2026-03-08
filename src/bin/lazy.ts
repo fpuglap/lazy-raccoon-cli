@@ -4,6 +4,7 @@ import { logout } from "../commands/logout.js";
 import { push } from "../commands/push.js";
 import { pull } from "../commands/pull.js";
 import { status } from "../commands/status.js";
+import { whoami } from "../commands/whoami.js";
 
 const program = new Command();
 
@@ -25,16 +26,23 @@ program
 program
   .command("push")
   .description("Push your Claude Code config to the cloud")
+  .option("-f, --force", "Full overwrite (skip merge)")
   .action(push);
 
 program
   .command("pull")
   .description("Pull your Claude Code config from the cloud")
+  .option("-f, --force", "Full overwrite (skip merge)")
   .action(pull);
 
 program
   .command("status")
   .description("Show your synced configs")
   .action(status);
+
+program
+  .command("whoami")
+  .description("Show current logged-in user")
+  .action(whoami);
 
 program.parse();

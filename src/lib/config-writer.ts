@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync, mkdirSync, cpSync } from "fs";
+import { existsSync, writeFileSync, mkdirSync, cpSync, rmSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { CLAUDE_DIR } from "./constants.js";
 import type { ConfigData } from "../types/index.js";
@@ -24,13 +24,38 @@ function writeDirMarkdown(
   }
 }
 
-export function writeClaudeConfig(data: ConfigData): string {
+export function writeClaudeConfig(
+  data: ConfigData,
+  options: { force?: boolean } = {}
+): string {
   // Backup existing config
   let backupPath = "";
   if (existsSync(CLAUDE_DIR)) {
     backupPath = backupClaude();
   } else {
     mkdirSync(CLAUDE_DIR, { recursive: true });
+  }
+
+  // In force mode, delete files/dirs not present in data
+  if (options.force) {
+    const singleFiles: [keyof ConfigData, string][] = [
+      ["claude_md", "CLAUDE.md"],
+      ["settings", "settings.json"],
+      ["mcp_servers", ".mcp.json"],
+    ];
+    for (const [key, filename] of singleFiles) {
+      if (!data[key]) {
+        const p = join(CLAUDE_DIR, filename);
+        if (existsSync(p)) unlinkSync(p);
+      }
+    }
+    const dirs = ["commands", "agents", "skills", "rules"] as const;
+    for (const dir of dirs) {
+      if (!data[dir]) {
+        const p = join(CLAUDE_DIR, dir);
+        if (existsSync(p)) rmSync(p, { recursive: true });
+      }
+    }
   }
 
   if (data.claude_md) {

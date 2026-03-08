@@ -22,3 +22,16 @@ export interface ConfigResponse {
   data?: ConfigData;
   updatedAt: string;
 }
+
+export type FieldChangeType = "added" | "removed" | "modified" | "unchanged";
+
+export interface FieldDiff {
+  field: string;
+  change: FieldChangeType;
+  details?: { added: string[]; removed: string[]; modified: string[] };
+}
+
+export interface DiffResult {
+  hasChanges: boolean;
+  fields: FieldDiff[];
+}
