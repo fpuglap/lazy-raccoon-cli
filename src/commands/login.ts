@@ -1,4 +1,5 @@
 import { createServer } from "http";
+import { hostname } from "os";
 import open from "open";
 import ora from "ora";
 import chalk from "chalk";
@@ -9,7 +10,8 @@ const PORT = 9876;
 
 export async function login() {
   const apiUrl = DEFAULT_API_URL;
-  const authUrl = `${apiUrl}/cli-auth`;
+  const deviceName = hostname();
+  const authUrl = `${apiUrl}/cli-auth?device=${encodeURIComponent(deviceName)}`;
 
   const spinner = ora("Waiting for browser authentication...").start();
 
