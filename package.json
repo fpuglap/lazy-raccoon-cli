@@ -1,10 +1,10 @@
 {
   "name": "lazy-raccoon",
   "version": "0.1.0",
-  "description": "Sync your Claude Code config across machines.",
+  "description": "Sync your AI tool configs across machines. Push once, pull anywhere.",
   "type": "module",
   "bin": {
-    "lazy": "./dist/bin/lazy.js"
+    "lazy": "dist/bin/lazy.js"
   },
   "files": [
     "dist"
@@ -16,11 +16,30 @@
   "keywords": [
     "claude",
     "claude-code",
+    "cursor",
+    "copilot",
+    "windsurf",
+    "aider",
+    "continue",
+    "ai",
     "config",
-    "sync"
+    "sync",
+    "dotfiles",
+    "cli"
   ],
   "author": "Facundo Pugliese",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fpuglap/lazy-raccoon-cli.git"
+  },
+  "homepage": "https://lazy-raccoon-web.vercel.app",
+  "bugs": {
+    "email": "fpugliese09@gmail.com"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
