@@ -39,12 +39,14 @@ program
   .command("push")
   .description("Push your Claude Code config to the cloud")
   .option("-f, --force", "Full overwrite (skip merge)")
+  .option("-p, --profile <name>", "Profile to sync (e.g. adoreal → ~/.claude-adoreal/)")
   .action(push);
 
 program
   .command("pull")
   .description("Pull your Claude Code config from the cloud")
   .option("-f, --force", "Full overwrite (skip merge)")
+  .option("-p, --profile <name>", "Profile to sync (e.g. adoreal → ~/.claude-adoreal/)")
   .action(pull);
 
 program

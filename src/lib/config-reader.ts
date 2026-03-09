@@ -35,19 +35,19 @@ function readDirMarkdown(dirPath: string): Record<string, string> | undefined {
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
-export function readClaudeConfig(): ConfigData {
-  if (!existsSync(CLAUDE_DIR)) {
-    console.error("Error: No Claude Code configuration found at ~/.claude.");
+export function readClaudeConfig(claudeDir: string = CLAUDE_DIR): ConfigData {
+  if (!existsSync(claudeDir)) {
+    console.error(`Error: No Claude Code configuration found at ${claudeDir}.`);
     process.exit(1);
   }
 
   return {
-    claude_md: readFileIfExists(join(CLAUDE_DIR, "CLAUDE.md")),
-    settings: readJsonIfExists(join(CLAUDE_DIR, "settings.json")),
-    mcp_servers: readJsonIfExists(join(CLAUDE_DIR, ".mcp.json")),
-    commands: readDirMarkdown(join(CLAUDE_DIR, "commands")),
-    agents: readDirMarkdown(join(CLAUDE_DIR, "agents")),
-    skills: readDirMarkdown(join(CLAUDE_DIR, "skills")),
-    rules: readDirMarkdown(join(CLAUDE_DIR, "rules")),
+    claude_md: readFileIfExists(join(claudeDir, "CLAUDE.md")),
+    settings: readJsonIfExists(join(claudeDir, "settings.json")),
+    mcp_servers: readJsonIfExists(join(claudeDir, ".mcp.json")),
+    commands: readDirMarkdown(join(claudeDir, "commands")),
+    agents: readDirMarkdown(join(claudeDir, "agents")),
+    skills: readDirMarkdown(join(claudeDir, "skills")),
+    rules: readDirMarkdown(join(claudeDir, "rules")),
   };
 }

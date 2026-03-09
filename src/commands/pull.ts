@@ -7,19 +7,26 @@ import { writeClaudeConfig } from "../lib/config-writer.js";
 import { diffConfigs, formatDiff } from "../lib/diff.js";
 import { mergeConfigs } from "../lib/merge.js";
 import { confirm } from "../lib/prompt.js";
+import { getClaudeDir, getConfigName } from "../lib/constants.js";
 import type { ConfigData } from "../types/index.js";
 
-export async function pull(options: { force?: boolean }) {
+export async function pull(options: { force?: boolean; profile?: string }) {
   const creds = requireAuth();
+  const claudeDir = getClaudeDir(options.profile);
+  const configName = getConfigName(options.profile);
+
+  if (options.profile) {
+    console.log(chalk.cyan(`Profile: ${options.profile} (${claudeDir})\n`));
+  }
 
   // Read local config
-  const localData = readClaudeConfig();
+  const localData = readClaudeConfig(claudeDir);
 
   // Fetch cloud config
   const spinner = ora("Fetching cloud config...").start();
   let cloudConfig;
   try {
-    cloudConfig = await pullConfig(creds, "default");
+    cloudConfig = await pullConfig(creds, configName);
   } catch (err) {
     spinner.fail(
       chalk.red(err instanceof Error ? err.message : "Failed to pull config")
@@ -63,7 +70,10 @@ export async function pull(options: { force?: boolean }) {
 
   const writeSpinner = ora("Writing config...").start();
   try {
-    const backupPath = writeClaudeConfig(dataToWrite, { force: forceWrite });
+    const backupPath = writeClaudeConfig(dataToWrite, {
+      force: forceWrite,
+      claudeDir,
+    });
 
     if (backupPath) {
       writeSpinner.succeed(

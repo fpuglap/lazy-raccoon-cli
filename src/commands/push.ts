@@ -6,19 +6,26 @@ import { pushConfig, pullConfig } from "../lib/api.js";
 import { diffConfigs, formatDiff } from "../lib/diff.js";
 import { mergeConfigs } from "../lib/merge.js";
 import { confirm } from "../lib/prompt.js";
+import { getClaudeDir, getConfigName } from "../lib/constants.js";
 import type { ConfigData } from "../types/index.js";
 
-export async function push(options: { force?: boolean }) {
+export async function push(options: { force?: boolean; profile?: string }) {
   const creds = requireAuth();
+  const claudeDir = getClaudeDir(options.profile);
+  const configName = getConfigName(options.profile);
+
+  if (options.profile) {
+    console.log(chalk.cyan(`Profile: ${options.profile} (${claudeDir})\n`));
+  }
 
   const spinner = ora("Reading local config...").start();
-  const localData = readClaudeConfig();
+  const localData = readClaudeConfig(claudeDir);
 
   // Fetch cloud config for diff/merge
   spinner.text = "Fetching cloud config...";
   let cloudData: ConfigData | null = null;
   try {
-    const cloudConfig = await pullConfig(creds, "default");
+    const cloudConfig = await pullConfig(creds, configName);
     cloudData = (cloudConfig.data as ConfigData) ?? null;
   } catch {
     // No cloud config yet (first push)
@@ -61,7 +68,7 @@ export async function push(options: { force?: boolean }) {
 
   const pushSpinner = ora("Pushing config...").start();
   try {
-    const result = await pushConfig(creds, "default", dataToPush);
+    const result = await pushConfig(creds, configName, dataToPush);
     pushSpinner.succeed(chalk.green(`Config pushed (v${result.version})`));
   } catch (err) {
     pushSpinner.fail(
