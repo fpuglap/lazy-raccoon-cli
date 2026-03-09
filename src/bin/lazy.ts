@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name("lazy")
   .description("Sync your Claude Code config across machines.")
-  .version("0.1.0");
+  .version("0.1.1");
 
 program
   .command("login")
@@ -47,6 +47,7 @@ program
   .description("Pull your Claude Code config from the cloud")
   .option("-f, --force", "Full overwrite (skip merge)")
   .option("-p, --profile <name>", "Profile to sync (e.g. adoreal → ~/.claude-adoreal/)")
+  .option("-d, --dir <path>", "Target directory (default: ~/.claude/)")
   .action(pull);
 
 program

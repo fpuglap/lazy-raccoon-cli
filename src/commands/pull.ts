@@ -10,12 +10,14 @@ import { confirm } from "../lib/prompt.js";
 import { getClaudeDir, getConfigName } from "../lib/constants.js";
 import type { ConfigData } from "../types/index.js";
 
-export async function pull(options: { force?: boolean; profile?: string }) {
+export async function pull(options: { force?: boolean; profile?: string; dir?: string }) {
   const creds = requireAuth();
-  const claudeDir = getClaudeDir(options.profile);
+  const claudeDir = options.dir || getClaudeDir(options.profile);
   const configName = getConfigName(options.profile);
 
-  if (options.profile) {
+  if (options.dir) {
+    console.log(chalk.cyan(`Target directory: ${claudeDir}\n`));
+  } else if (options.profile) {
     console.log(chalk.cyan(`Profile: ${options.profile} (${claudeDir})\n`));
   }
 
