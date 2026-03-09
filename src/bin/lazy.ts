@@ -22,8 +22,8 @@ const program = new Command();
 
 program
   .name("lazy")
-  .description("Sync your Claude Code config across machines.")
-  .version("0.1.1");
+  .description("Sync your AI tool configs across machines.")
+  .version("0.2.0");
 
 program
   .command("login")
@@ -37,17 +37,19 @@ program
 
 program
   .command("push")
-  .description("Push your Claude Code config to the cloud")
+  .description("Push your config to the cloud")
   .option("-f, --force", "Full overwrite (skip merge)")
-  .option("-p, --profile <name>", "Profile to sync (e.g. adoreal → ~/.claude-adoreal/)")
+  .option("-p, --profile <name>", "Profile to sync (e.g. adoreal)")
+  .option("-t, --tool <id>", "AI tool (claude, cursor, copilot, gemini, windsurf, cline)", "claude")
   .action(push);
 
 program
   .command("pull")
-  .description("Pull your Claude Code config from the cloud")
+  .description("Pull your config from the cloud")
   .option("-f, --force", "Full overwrite (skip merge)")
-  .option("-p, --profile <name>", "Profile to sync (e.g. adoreal → ~/.claude-adoreal/)")
-  .option("-d, --dir <path>", "Target directory (default: ~/.claude/)")
+  .option("-p, --profile <name>", "Profile to sync (e.g. adoreal)")
+  .option("-t, --tool <id>", "AI tool (claude, cursor, copilot, gemini, windsurf, cline)", "claude")
+  .option("-d, --dir <path>", "Target directory (overrides default)")
   .action(pull);
 
 program

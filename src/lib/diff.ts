@@ -1,19 +1,6 @@
 import chalk from "chalk";
+import type { ToolDefinition } from "./tools/index.js";
 import type { ConfigData, DiffResult, FieldDiff } from "../types/index.js";
-
-const TEXT_FIELDS = ["claude_md"] as const;
-const JSON_FIELDS = ["settings", "mcp_servers"] as const;
-const DIR_FIELDS = ["commands", "agents", "skills", "rules"] as const;
-
-const FIELD_LABELS: Record<string, string> = {
-  claude_md: "CLAUDE.md",
-  settings: "settings.json",
-  mcp_servers: ".mcp.json",
-  commands: "commands/",
-  agents: "agents/",
-  skills: "skills/",
-  rules: "rules/",
-};
 
 function diffTextField(
   field: string,
@@ -85,33 +72,52 @@ function diffDirField(
   return { field, change: "modified", details: { added, removed, modified } };
 }
 
-export function diffConfigs(base: ConfigData, target: ConfigData): DiffResult {
+export function diffConfigs(
+  tool: ToolDefinition,
+  base: ConfigData,
+  target: ConfigData
+): DiffResult {
   const fields: FieldDiff[] = [];
 
-  for (const f of TEXT_FIELDS) {
-    fields.push(diffTextField(f, base[f], target[f]));
-  }
+  for (const file of tool.files) {
+    const baseVal = base[file.key];
+    const targetVal = target[file.key];
 
-  for (const f of JSON_FIELDS) {
-    fields.push(diffJsonField(f, base[f], target[f]));
-  }
-
-  for (const f of DIR_FIELDS) {
-    fields.push(diffDirField(f, base[f], target[f]));
+    switch (file.type) {
+      case "text":
+        fields.push(diffTextField(file.key, baseVal as string | undefined, targetVal as string | undefined));
+        break;
+      case "json":
+        fields.push(diffJsonField(file.key, baseVal as Record<string, unknown> | undefined, targetVal as Record<string, unknown> | undefined));
+        break;
+      case "dir":
+        fields.push(diffDirField(file.key, baseVal as Record<string, string> | undefined, targetVal as Record<string, string> | undefined));
+        break;
+    }
   }
 
   const hasChanges = fields.some((f) => f.change !== "unchanged");
   return { hasChanges, fields };
 }
 
-export function formatDiff(diff: DiffResult, direction: "push" | "pull"): string {
+export function formatDiff(
+  tool: ToolDefinition,
+  diff: DiffResult,
+  direction: "push" | "pull"
+): string {
+  // Build label map from tool definition
+  const labels: Record<string, string> = {};
+  for (const file of tool.files) {
+    labels[file.key] = file.label;
+  }
+
   const lines: string[] = [];
   const header = direction === "push" ? "Changes to push:" : "Changes to pull:";
   lines.push(chalk.bold(header));
   lines.push("");
 
   for (const field of diff.fields) {
-    const label = FIELD_LABELS[field.field] || field.field;
+    const label = labels[field.field] || field.field;
     const padded = label.padEnd(20);
 
     switch (field.change) {

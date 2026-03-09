@@ -1,18 +1,40 @@
+import type { ToolDefinition } from "./tools/index.js";
 import type { ConfigData } from "../types/index.js";
 
 // Merge two ConfigData objects. Overlay wins on conflicts, base-only fields preserved.
 // For push: base=cloud, overlay=local
 // For pull: base=local, overlay=cloud
-export function mergeConfigs(base: ConfigData, overlay: ConfigData): ConfigData {
-  return {
-    claude_md: overlay.claude_md ?? base.claude_md,
-    settings: mergeJson(base.settings, overlay.settings),
-    mcp_servers: mergeJson(base.mcp_servers, overlay.mcp_servers),
-    commands: mergeDir(base.commands, overlay.commands),
-    agents: mergeDir(base.agents, overlay.agents),
-    skills: mergeDir(base.skills, overlay.skills),
-    rules: mergeDir(base.rules, overlay.rules),
-  };
+export function mergeConfigs(
+  tool: ToolDefinition,
+  base: ConfigData,
+  overlay: ConfigData
+): ConfigData {
+  const result: ConfigData = {};
+
+  for (const file of tool.files) {
+    const baseVal = base[file.key];
+    const overlayVal = overlay[file.key];
+
+    switch (file.type) {
+      case "text":
+        result[file.key] = (overlayVal as string | undefined) ?? (baseVal as string | undefined);
+        break;
+      case "json":
+        result[file.key] = mergeJson(
+          baseVal as Record<string, unknown> | undefined,
+          overlayVal as Record<string, unknown> | undefined
+        );
+        break;
+      case "dir":
+        result[file.key] = mergeDir(
+          baseVal as Record<string, string> | undefined,
+          overlayVal as Record<string, string> | undefined
+        );
+        break;
+    }
+  }
+
+  return result;
 }
 
 function mergeJson(

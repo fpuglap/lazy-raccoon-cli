@@ -1,13 +1,13 @@
 import { existsSync, writeFileSync, mkdirSync, cpSync, rmSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
-import { CLAUDE_DIR } from "./constants.js";
+import type { ToolDefinition } from "./tools/index.js";
 import type { ConfigData } from "../types/index.js";
 
-function backupClaude(claudeDir: string): string {
+function backupDir(dir: string): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const backupDir = `${claudeDir}.backup.${timestamp}`;
-  cpSync(claudeDir, backupDir, { recursive: true });
-  return backupDir;
+  const backupPath = `${dir}.backup.${timestamp}`;
+  cpSync(dir, backupPath, { recursive: true });
+  return backupPath;
 }
 
 function writeFileEnsureDir(filePath: string, content: string): void {
@@ -15,83 +15,59 @@ function writeFileEnsureDir(filePath: string, content: string): void {
   writeFileSync(filePath, content);
 }
 
-function writeDirMarkdown(
-  dirPath: string,
-  files: Record<string, string>
-): void {
+function writeDirFiles(dirPath: string, files: Record<string, string>): void {
   for (const [relativePath, content] of Object.entries(files)) {
     writeFileEnsureDir(join(dirPath, relativePath), content);
   }
 }
 
-export function writeClaudeConfig(
+export function writeConfig(
+  tool: ToolDefinition,
   data: ConfigData,
-  options: { force?: boolean; claudeDir?: string } = {}
+  options: { force?: boolean; dir: string }
 ): string {
-  const dir = options.claudeDir || CLAUDE_DIR;
+  const { dir } = options;
 
   // Backup existing config
   let backupPath = "";
   if (existsSync(dir)) {
-    backupPath = backupClaude(dir);
+    backupPath = backupDir(dir);
   } else {
     mkdirSync(dir, { recursive: true });
   }
 
-  // In force mode, delete files/dirs not present in data
-  if (options.force) {
-    const singleFiles: [keyof ConfigData, string][] = [
-      ["claude_md", "CLAUDE.md"],
-      ["settings", "settings.json"],
-      ["mcp_servers", ".mcp.json"],
-    ];
-    for (const [key, filename] of singleFiles) {
-      if (!data[key]) {
-        const p = join(dir, filename);
-        if (existsSync(p)) unlinkSync(p);
+  for (const file of tool.files) {
+    const fullPath = join(dir, file.path);
+    const value = data[file.key];
+
+    // In force mode, delete files/dirs not present in data
+    if (options.force && !value) {
+      if (existsSync(fullPath)) {
+        if (file.type === "dir") {
+          rmSync(fullPath, { recursive: true });
+        } else {
+          unlinkSync(fullPath);
+        }
       }
+      continue;
     }
-    const dirs = ["commands", "agents", "skills", "rules"] as const;
-    for (const d of dirs) {
-      if (!data[d]) {
-        const p = join(dir, d);
-        if (existsSync(p)) rmSync(p, { recursive: true });
-      }
+
+    if (!value) continue;
+
+    switch (file.type) {
+      case "text":
+        writeFileEnsureDir(fullPath, value as string);
+        break;
+      case "json":
+        writeFileEnsureDir(
+          fullPath,
+          JSON.stringify(value as Record<string, unknown>, null, 2)
+        );
+        break;
+      case "dir":
+        writeDirFiles(fullPath, value as Record<string, string>);
+        break;
     }
-  }
-
-  if (data.claude_md) {
-    writeFileEnsureDir(join(dir, "CLAUDE.md"), data.claude_md);
-  }
-
-  if (data.settings) {
-    writeFileEnsureDir(
-      join(dir, "settings.json"),
-      JSON.stringify(data.settings, null, 2)
-    );
-  }
-
-  if (data.mcp_servers) {
-    writeFileEnsureDir(
-      join(dir, ".mcp.json"),
-      JSON.stringify(data.mcp_servers, null, 2)
-    );
-  }
-
-  if (data.commands) {
-    writeDirMarkdown(join(dir, "commands"), data.commands);
-  }
-
-  if (data.agents) {
-    writeDirMarkdown(join(dir, "agents"), data.agents);
-  }
-
-  if (data.skills) {
-    writeDirMarkdown(join(dir, "skills"), data.skills);
-  }
-
-  if (data.rules) {
-    writeDirMarkdown(join(dir, "rules"), data.rules);
   }
 
   return backupPath;

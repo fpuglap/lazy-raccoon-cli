@@ -7,17 +7,8 @@ export const CREDENTIALS_FILE = join(LAZY_DIR, "credentials.json");
 // Default API URL — overridden by credentials.json
 export const DEFAULT_API_URL = "https://lazy-raccoon-web.vercel.app";
 
-export function getClaudeDir(profile?: string): string {
-  if (process.env.CLAUDE_DIR) return process.env.CLAUDE_DIR;
-  if (profile && profile !== "default") {
-    return join(homedir(), `.claude-${profile}`);
-  }
-  return join(homedir(), ".claude");
-}
+export const DEFAULT_TOOL = "claude";
 
 export function getConfigName(profile?: string): string {
   return profile || "default";
 }
-
-// Keep for backwards compat with config-reader/writer imports
-export const CLAUDE_DIR = getClaudeDir();

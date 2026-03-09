@@ -1,31 +1,45 @@
 import ora from "ora";
 import chalk from "chalk";
 import { requireAuth } from "../lib/credentials.js";
-import { readClaudeConfig } from "../lib/config-reader.js";
+import { readConfig } from "../lib/config-reader.js";
 import { pushConfig, pullConfig } from "../lib/api.js";
 import { diffConfigs, formatDiff } from "../lib/diff.js";
 import { mergeConfigs } from "../lib/merge.js";
 import { confirm } from "../lib/prompt.js";
-import { getClaudeDir, getConfigName } from "../lib/constants.js";
+import { getConfigName, DEFAULT_TOOL } from "../lib/constants.js";
+import { getTool } from "../lib/tools/index.js";
 import type { ConfigData } from "../types/index.js";
 
-export async function push(options: { force?: boolean; profile?: string }) {
+export async function push(options: { force?: boolean; profile?: string; tool?: string }) {
   const creds = requireAuth();
-  const claudeDir = getClaudeDir(options.profile);
+  const toolId = options.tool || DEFAULT_TOOL;
+  const tool = getTool(toolId);
+  const dir = options.profile
+    ? tool.getDir(options.profile)
+    : process.env.CLAUDE_DIR && toolId === "claude"
+      ? process.env.CLAUDE_DIR
+      : tool.getDir();
   const configName = getConfigName(options.profile);
 
+  console.log(chalk.cyan(`Tool: ${tool.label}`));
   if (options.profile) {
-    console.log(chalk.cyan(`Profile: ${options.profile} (${claudeDir})\n`));
+    console.log(chalk.cyan(`Profile: ${options.profile} (${dir})`));
   }
+  console.log();
 
   const spinner = ora("Reading local config...").start();
-  const localData = readClaudeConfig(claudeDir);
+  const localData = readConfig(tool, dir);
+
+  if (Object.values(localData).every((v) => v === undefined)) {
+    spinner.fail(chalk.red(`No ${tool.label} configuration found at ${dir}`));
+    process.exit(1);
+  }
 
   // Fetch cloud config for diff/merge
   spinner.text = "Fetching cloud config...";
   let cloudData: ConfigData | null = null;
   try {
-    const cloudConfig = await pullConfig(creds, configName);
+    const cloudConfig = await pullConfig(creds, configName, toolId);
     cloudData = (cloudConfig.data as ConfigData) ?? null;
   } catch {
     // No cloud config yet (first push)
@@ -40,23 +54,23 @@ export async function push(options: { force?: boolean; profile?: string }) {
     dataToPush = localData;
   } else if (options.force) {
     // Force: full overwrite, cloud becomes exact copy of local
-    const diff = diffConfigs(cloudData, localData);
+    const diff = diffConfigs(tool, cloudData, localData);
     if (!diff.hasChanges) {
       console.log(chalk.gray("No changes to push."));
       return;
     }
-    console.log(formatDiff(diff, "push"));
+    console.log(formatDiff(tool, diff, "push"));
     console.log(chalk.yellow("  --force: Cloud will be fully overwritten with local config.\n"));
     dataToPush = localData;
   } else {
     // Merge: local on top of cloud (local wins, cloud-only preserved)
-    const merged = mergeConfigs(cloudData, localData);
-    const diff = diffConfigs(cloudData, merged);
+    const merged = mergeConfigs(tool, cloudData, localData);
+    const diff = diffConfigs(tool, cloudData, merged);
     if (!diff.hasChanges) {
       console.log(chalk.gray("No changes to push."));
       return;
     }
-    console.log(formatDiff(diff, "push"));
+    console.log(formatDiff(tool, diff, "push"));
     dataToPush = merged;
   }
 
@@ -68,7 +82,7 @@ export async function push(options: { force?: boolean; profile?: string }) {
 
   const pushSpinner = ora("Pushing config...").start();
   try {
-    const result = await pushConfig(creds, configName, dataToPush);
+    const result = await pushConfig(creds, configName, toolId, dataToPush);
     pushSpinner.succeed(chalk.green(`Config pushed (v${result.version})`));
   } catch (err) {
     pushSpinner.fail(

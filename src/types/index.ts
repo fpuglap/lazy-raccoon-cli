@@ -4,19 +4,15 @@ export interface Credentials {
   api_url: string;
 }
 
+/** Generic config data — keys are defined by each tool's file mappings */
 export interface ConfigData {
-  claude_md?: string;
-  settings?: Record<string, unknown>;
-  mcp_servers?: Record<string, unknown>;
-  commands?: Record<string, string>;
-  agents?: Record<string, string>;
-  skills?: Record<string, string>;
-  rules?: Record<string, string>;
+  [key: string]: string | Record<string, unknown> | Record<string, string> | undefined;
 }
 
 export interface ConfigResponse {
   id: string;
   name: string;
+  tool?: string;
   version: number;
   hash?: string;
   data?: ConfigData;

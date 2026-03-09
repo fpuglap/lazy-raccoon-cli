@@ -44,11 +44,12 @@ async function request(
 export async function pushConfig(
   creds: Credentials,
   name: string,
+  tool: string,
   data: ConfigData
 ): Promise<ConfigResponse> {
   const res = await request(creds, "/configs", {
     method: "POST",
-    body: JSON.stringify({ name, data }),
+    body: JSON.stringify({ name, tool, data }),
   });
 
   if (!res.ok) {
@@ -61,9 +62,10 @@ export async function pushConfig(
 
 export async function pullConfig(
   creds: Credentials,
-  name: string
+  name: string,
+  tool: string
 ): Promise<ConfigResponse> {
-  const res = await request(creds, `/configs/latest?name=${name}`);
+  const res = await request(creds, `/configs/latest?name=${name}&tool=${tool}`);
 
   if (res.status === 404) {
     throw new Error("No config found. Run `lazy push` first.");
