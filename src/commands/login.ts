@@ -10,7 +10,11 @@ const PORT = 9876;
 
 export async function login() {
   const apiUrl = DEFAULT_API_URL;
-  const deviceName = hostname();
+  const deviceName = hostname()
+    .replace(/\.local$/, "")
+    .replace(/-/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   const authUrl = `${apiUrl}/cli-auth?device=${encodeURIComponent(deviceName)}`;
 
   const spinner = ora("Waiting for browser authentication...").start();
