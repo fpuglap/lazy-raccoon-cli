@@ -44,6 +44,13 @@ export async function login() {
       }
     });
 
+    process.on("SIGINT", () => {
+      server.close();
+      spinner.stop();
+      console.log("\nCancelled.");
+      process.exit(0);
+    });
+
     server.on("error", (err: NodeJS.ErrnoException) => {
       if (err.code === "EADDRINUSE") {
         reject(new Error(`Port ${PORT} is already in use. Close the other process and try again.`));
@@ -65,10 +72,11 @@ export async function login() {
     });
 
     // Timeout after 2 minutes
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       server.close();
       reject(new Error("Login timed out. Try again."));
     }, 120_000);
+    timeout.unref();
   });
 
   // TODO: decode token to get email, or fetch from API
@@ -79,4 +87,5 @@ export async function login() {
   });
 
   spinner.succeed(chalk.green("Logged in successfully!"));
+  process.exit(0);
 }
