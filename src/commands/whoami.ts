@@ -4,19 +4,26 @@ import { requireAuth } from "../lib/credentials.js";
 export async function whoami() {
   const creds = requireAuth();
 
-  const res = await fetch(`${creds.api_url}/api/me`, {
-    headers: {
-      Authorization: `Bearer ${creds.token}`,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${creds.api_url}/api/me`, {
+      headers: {
+        Authorization: `Bearer ${creds.token}`,
+      },
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch {
+    console.error(chalk.red("Error: Could not connect to server. Check your internet connection."));
+    process.exit(1);
+  }
 
   if (res.status === 401) {
-    console.error("Error: Session expired. Run `lazy login` again.");
+    console.error(chalk.red("Error: Session expired. Run `lazy login` again."));
     process.exit(1);
   }
 
   if (!res.ok) {
-    console.error("Error: Could not fetch user info.");
+    console.error(chalk.red("Error: Could not fetch user info."));
     process.exit(1);
   }
 

@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { Command } from "commander";
 import { login } from "../commands/login.js";
 import { logout } from "../commands/logout.js";
@@ -5,6 +6,17 @@ import { push } from "../commands/push.js";
 import { pull } from "../commands/pull.js";
 import { status } from "../commands/status.js";
 import { whoami } from "../commands/whoami.js";
+
+process.on("uncaughtException", (err) => {
+  console.error(chalk.red(`Error: ${err.message}`));
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (err) => {
+  const message = err instanceof Error ? err.message : "Something went wrong";
+  console.error(chalk.red(`Error: ${message}`));
+  process.exit(1);
+});
 
 const program = new Command();
 

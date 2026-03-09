@@ -1,5 +1,13 @@
 import type { Credentials, ConfigData, ConfigResponse } from "../types/index.js";
 
+async function safeJsonParse(res: Response): Promise<Record<string, unknown>> {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
+
 async function request(
   creds: Credentials,
   path: string,
@@ -7,14 +15,23 @@ async function request(
 ): Promise<Response> {
   const url = `${creds.api_url}/api${path}`;
 
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${creds.token}`,
-      ...options.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(30_000),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${creds.token}`,
+        ...options.headers,
+      },
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      throw new Error("Request timed out. Check your connection and try again.");
+    }
+    throw new Error("Could not connect to server. Check your internet connection.");
+  }
 
   if (res.status === 401) {
     console.error("Error: Session expired. Run `lazy login` again.");
@@ -35,8 +52,8 @@ export async function pushConfig(
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Failed to push config");
+    const body = await safeJsonParse(res);
+    throw new Error((body.error as string) || "Failed to push config");
   }
 
   return res.json();
@@ -53,8 +70,8 @@ export async function pullConfig(
   }
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Failed to pull config");
+    const body = await safeJsonParse(res);
+    throw new Error((body.error as string) || "Failed to pull config");
   }
 
   return res.json();
@@ -66,8 +83,8 @@ export async function listConfigs(
   const res = await request(creds, "/configs");
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Failed to list configs");
+    const body = await safeJsonParse(res);
+    throw new Error((body.error as string) || "Failed to list configs");
   }
 
   return res.json();

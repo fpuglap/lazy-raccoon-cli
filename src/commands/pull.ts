@@ -62,13 +62,20 @@ export async function pull(options: { force?: boolean }) {
   }
 
   const writeSpinner = ora("Writing config...").start();
-  const backupPath = writeClaudeConfig(dataToWrite, { force: forceWrite });
+  try {
+    const backupPath = writeClaudeConfig(dataToWrite, { force: forceWrite });
 
-  if (backupPath) {
-    writeSpinner.succeed(
-      chalk.green(`Config pulled (v${cloudConfig.version}). Backup: ${backupPath}`)
+    if (backupPath) {
+      writeSpinner.succeed(
+        chalk.green(`Config pulled (v${cloudConfig.version}). Backup: ${backupPath}`)
+      );
+    } else {
+      writeSpinner.succeed(chalk.green(`Config pulled (v${cloudConfig.version})`));
+    }
+  } catch (err) {
+    writeSpinner.fail(
+      chalk.red(err instanceof Error ? err.message : "Failed to write config")
     );
-  } else {
-    writeSpinner.succeed(chalk.green(`Config pulled (v${cloudConfig.version})`));
+    process.exit(1);
   }
 }

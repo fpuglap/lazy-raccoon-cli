@@ -44,6 +44,14 @@ export async function login() {
       }
     });
 
+    server.on("error", (err: NodeJS.ErrnoException) => {
+      if (err.code === "EADDRINUSE") {
+        reject(new Error(`Port ${PORT} is already in use. Close the other process and try again.`));
+      } else {
+        reject(new Error(`Could not start local server: ${err.message}`));
+      }
+    });
+
     server.listen(PORT, () => {
       // Open browser
       open(authUrl, { app: { name: "google chrome" } }).catch(() => {
