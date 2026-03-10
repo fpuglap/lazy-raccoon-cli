@@ -1,3 +1,4 @@
+import { createRequire } from "module";
 import chalk from "chalk";
 import { Command } from "commander";
 import { login } from "../commands/login.js";
@@ -6,6 +7,9 @@ import { push } from "../commands/push.js";
 import { pull } from "../commands/pull.js";
 import { status } from "../commands/status.js";
 import { whoami } from "../commands/whoami.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../../package.json");
 
 process.on("uncaughtException", (err) => {
   console.error(chalk.red(`Error: ${err.message}`));
@@ -23,7 +27,7 @@ const program = new Command();
 program
   .name("lazy")
   .description("Sync your AI tool configs across machines.")
-  .version("0.2.0");
+  .version(version);
 
 program
   .command("login")

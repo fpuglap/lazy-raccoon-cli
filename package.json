@@ -1,6 +1,6 @@
 {
   "name": "lazy-raccoon",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Sync your AI tool configs across machines. Push once, pull anywhere.",
   "type": "module",
   "bin": {
