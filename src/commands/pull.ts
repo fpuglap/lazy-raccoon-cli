@@ -1,7 +1,7 @@
 import ora from "ora";
 import chalk from "chalk";
 import { requireAuth } from "../lib/credentials.js";
-import { pullConfig } from "../lib/api.js";
+import { pullConfig, getTeam } from "../lib/api.js";
 import { readConfig } from "../lib/config-reader.js";
 import { writeConfig } from "../lib/config-writer.js";
 import { diffConfigs, formatDiff } from "../lib/diff.js";
@@ -16,6 +16,7 @@ export async function pull(options: {
   profile?: string;
   dir?: string;
   tool?: string;
+  team?: string;
 }) {
   const creds = requireAuth();
   const toolId = options.tool || DEFAULT_TOOL;
@@ -28,7 +29,24 @@ export async function pull(options: {
         : tool.getDir());
   const configName = getConfigName(options.profile);
 
+  // Resolve team slug to teamId
+  let teamId: string | undefined;
+  if (options.team) {
+    const spinnerTeam = ora("Resolving team...").start();
+    try {
+      const team = await getTeam(creds, options.team);
+      teamId = team.id;
+      spinnerTeam.stop();
+    } catch (err) {
+      spinnerTeam.fail(chalk.red(err instanceof Error ? err.message : "Failed to resolve team"));
+      process.exit(1);
+    }
+  }
+
   console.log(chalk.cyan(`Tool: ${tool.label}`));
+  if (options.team) {
+    console.log(chalk.cyan(`Team: ${options.team}`));
+  }
   if (options.dir) {
     console.log(chalk.cyan(`Target directory: ${dir}`));
   } else if (options.profile) {
@@ -43,7 +61,7 @@ export async function pull(options: {
   const spinner = ora("Fetching cloud config...").start();
   let cloudConfig;
   try {
-    cloudConfig = await pullConfig(creds, configName, toolId);
+    cloudConfig = await pullConfig(creds, configName, toolId, teamId);
   } catch (err) {
     spinner.fail(
       chalk.red(err instanceof Error ? err.message : "Failed to pull config")

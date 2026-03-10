@@ -2,7 +2,7 @@ import ora from "ora";
 import chalk from "chalk";
 import { requireAuth } from "../lib/credentials.js";
 import { readConfig } from "../lib/config-reader.js";
-import { pushConfig, pullConfig } from "../lib/api.js";
+import { pushConfig, pullConfig, getTeam } from "../lib/api.js";
 import { diffConfigs, formatDiff } from "../lib/diff.js";
 import { mergeConfigs } from "../lib/merge.js";
 import { confirm } from "../lib/prompt.js";
@@ -10,7 +10,7 @@ import { getConfigName, DEFAULT_TOOL } from "../lib/constants.js";
 import { getTool } from "../lib/tools/index.js";
 import type { ConfigData } from "../types/index.js";
 
-export async function push(options: { force?: boolean; profile?: string; tool?: string }) {
+export async function push(options: { force?: boolean; profile?: string; tool?: string; team?: string }) {
   const creds = requireAuth();
   const toolId = options.tool || DEFAULT_TOOL;
   const tool = getTool(toolId);
@@ -21,7 +21,24 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
       : tool.getDir();
   const configName = getConfigName(options.profile);
 
+  // Resolve team slug to teamId
+  let teamId: string | undefined;
+  if (options.team) {
+    const spinnerTeam = ora("Resolving team...").start();
+    try {
+      const team = await getTeam(creds, options.team);
+      teamId = team.id;
+      spinnerTeam.stop();
+    } catch (err) {
+      spinnerTeam.fail(chalk.red(err instanceof Error ? err.message : "Failed to resolve team"));
+      process.exit(1);
+    }
+  }
+
   console.log(chalk.cyan(`Tool: ${tool.label}`));
+  if (options.team) {
+    console.log(chalk.cyan(`Team: ${options.team}`));
+  }
   if (options.profile) {
     console.log(chalk.cyan(`Profile: ${options.profile} (${dir})`));
   }
@@ -39,7 +56,7 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
   spinner.text = "Fetching cloud config...";
   let cloudData: ConfigData | null = null;
   try {
-    const cloudConfig = await pullConfig(creds, configName, toolId);
+    const cloudConfig = await pullConfig(creds, configName, toolId, teamId);
     cloudData = (cloudConfig.data as ConfigData) ?? null;
   } catch {
     // No cloud config yet (first push)
@@ -82,7 +99,7 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
 
   const pushSpinner = ora("Pushing config...").start();
   try {
-    const result = await pushConfig(creds, configName, toolId, dataToPush);
+    const result = await pushConfig(creds, configName, toolId, dataToPush, teamId);
     pushSpinner.succeed(chalk.green(`Config pushed (v${result.version})`));
   } catch (err) {
     pushSpinner.fail(

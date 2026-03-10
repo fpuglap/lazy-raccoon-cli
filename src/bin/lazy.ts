@@ -7,6 +7,15 @@ import { push } from "../commands/push.js";
 import { pull } from "../commands/pull.js";
 import { status } from "../commands/status.js";
 import { whoami } from "../commands/whoami.js";
+import {
+  teamsList,
+  teamsCreate,
+  teamsInfo,
+  teamsInvite,
+  teamsLeave,
+  teamsInvitations,
+  teamsAccept,
+} from "../commands/teams.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json");
@@ -45,6 +54,7 @@ program
   .option("-f, --force", "Full overwrite (skip merge)")
   .option("-p, --profile <name>", "Profile to sync (e.g. adoreal)")
   .option("-t, --tool <id>", "AI tool (claude, cursor, copilot, gemini, windsurf, cline)", "claude")
+  .option("-T, --team <slug>", "Push to a team config")
   .action(push);
 
 program
@@ -54,6 +64,7 @@ program
   .option("-p, --profile <name>", "Profile to sync (e.g. adoreal)")
   .option("-t, --tool <id>", "AI tool (claude, cursor, copilot, gemini, windsurf, cline)", "claude")
   .option("-d, --dir <path>", "Target directory (overrides default)")
+  .option("-T, --team <slug>", "Pull from a team config")
   .action(pull);
 
 program
@@ -65,5 +76,40 @@ program
   .command("whoami")
   .description("Show current logged-in user")
   .action(whoami);
+
+const teamsCmd = program
+  .command("teams")
+  .description("Manage teams")
+  .action(teamsList);
+
+teamsCmd
+  .command("create <name>")
+  .description("Create a new team")
+  .action(teamsCreate);
+
+teamsCmd
+  .command("info <slug>")
+  .description("Show team details")
+  .action(teamsInfo);
+
+teamsCmd
+  .command("invite <slug> <email>")
+  .description("Invite a user to a team")
+  .action(teamsInvite);
+
+teamsCmd
+  .command("leave <slug>")
+  .description("Leave a team")
+  .action(teamsLeave);
+
+teamsCmd
+  .command("invitations")
+  .description("List pending invitations")
+  .action(teamsInvitations);
+
+teamsCmd
+  .command("accept <id>")
+  .description("Accept a team invitation")
+  .action(teamsAccept);
 
 program.parse();
