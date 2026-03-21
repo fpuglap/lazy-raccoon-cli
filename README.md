@@ -1,82 +1,157 @@
-# Lazy Raccoon CLI
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light.svg" />
+    <img src="./assets/logo-light.svg" alt="Lazy Raccoon" width="280" />
+  </picture>
+</p>
 
-Sync your Claude Code config across machines.
+<p align="center">
+  <strong>Sync your AI tool configs across machines and teams.</strong><br />
+  One command to push, one to pull.
+</p>
 
-## Installation
+<p align="center">
+  <a href="https://www.npmjs.com/package/lazy-raccoon"><img src="https://img.shields.io/npm/v/lazy-raccoon.svg" alt="npm version" /></a>
+  <a href="https://github.com/fpuglap/lazy-raccoon-cli/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/lazy-raccoon.svg" alt="license" /></a>
+</p>
+
+<p align="center">
+  <a href="https://lazyraccoon.dev"><strong>Website</strong></a> ·
+  <a href="https://docs.lazyraccoon.dev"><strong>Docs</strong></a> ·
+  <a href="https://lazyraccoon.dev/dashboard"><strong>Dashboard</strong></a>
+</p>
+
+<p align="center">
+  <img src="./assets/demo.gif" alt="Lazy Raccoon CLI demo" width="700" />
+</p>
+
+## Why
+
+Every time you switch machines, you reconfigure your AI tools from scratch — rules, MCP servers, agents, settings. Lazy Raccoon fixes that. Push your config once, pull it anywhere.
+
+## Supported tools
+
+| Tool | Config path |
+|------|-------------|
+| Claude Code | `~/.claude/` |
+| Cursor | `~/.cursor/` |
+| GitHub Copilot | `~/.copilot/` |
+| Gemini CLI | `~/.gemini/` |
+| Windsurf | `~/.codeium/windsurf/` |
+| Cline | `~/.cline/` |
+
+## Quick start
 
 ```bash
 npm install -g lazy-raccoon
+lazy login
+lazy push
 ```
 
-Or for local development:
+That's it. Your config is in the cloud. Pull it on any other machine:
 
 ```bash
-npm install
-npm run build
-npm link
+lazy pull
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `lazy login` | Authenticate via browser (opens Chrome) |
+| `lazy login` | Authenticate via browser |
 | `lazy logout` | Remove stored credentials |
 | `lazy push` | Upload local config to cloud |
 | `lazy pull` | Download cloud config to local |
 | `lazy status` | List all synced configs |
 | `lazy whoami` | Show current logged-in user |
+| `lazy teams list` | List your teams |
+| `lazy teams create <name>` | Create a new team |
+| `lazy teams info <slug>` | Show team members |
+| `lazy teams invite <slug> <email>` | Invite someone to a team |
+| `lazy teams leave <slug>` | Leave a team |
+| `lazy teams invitations` | List pending invitations |
+| `lazy teams accept <id>` | Accept an invitation |
 
-## Push & Pull
+## Flags
 
-By default, `push` and `pull` use **smart merge**:
+| Flag | Commands | Description |
+|------|----------|-------------|
+| `--tool <id>` | push, pull | Choose tool: `claude`, `cursor`, `copilot`, `gemini`, `windsurf`, `cline` |
+| `--team <slug>` or `-T` | push, pull | Push/pull for a team instead of personal |
+| `--force` | push, pull | Skip merge, fully overwrite |
+| `--profile <name>` | push, pull | Use a named profile |
+| `--dir <path>` | pull | Pull to a custom directory |
+
+## Smart merge
+
+By default, push and pull use smart merge:
 
 - **push**: local wins on conflicts, cloud-only fields are preserved
 - **pull**: cloud wins on conflicts, local-only fields are preserved
 
-Both commands show a diff preview and ask for confirmation before applying changes.
+Both commands show a diff preview and ask for confirmation before applying. Pull creates a backup before writing.
 
-Use `--force` to skip merge and fully overwrite:
+Use `--force` to skip merge and fully overwrite.
+
+## Teams
+
+Share configs across your team:
 
 ```bash
-lazy push --force   # cloud becomes exact copy of local
-lazy pull --force   # local becomes exact copy of cloud
+lazy teams create "My Team"
+lazy push --team my-team
 ```
 
-Pull creates a backup (`.claude.backup.<timestamp>`) before writing.
+Team members pull the shared config:
+
+```bash
+lazy pull --team my-team
+```
+
+Invite members:
+
+```bash
+lazy teams invite my-team dev@company.com
+```
 
 ## What gets synced
 
-- `CLAUDE.md`
-- `settings.json`
-- `.mcp.json`
-- `commands/`
-- `agents/`
-- `skills/`
-- `rules/`
+Each tool defines which files and directories are synced:
 
-## What does NOT get synced
+| Tool | Files synced |
+|------|-------------|
+| Claude Code | `CLAUDE.md`, `settings.json`, `.mcp.json`, `commands/`, `agents/`, `skills/`, `rules/` |
+| Cursor | `rules/*.mdc`, `mcp.json` |
+| GitHub Copilot | `copilot-instructions.md`, `config.json`, `mcp-config.json`, `agents/` |
+| Gemini CLI | `GEMINI.md`, `settings.json`, `commands/` |
+| Windsurf | `memories/global_rules.md` |
+| Cline | `cline_mcp_settings.json` |
 
-- `settings.local.json`
-- `projects/`
-- `plugins/`
-- `.claude.json`
-- History, debug, cache
+Sensitive files (`.env`, API keys, tokens, caches, logs) are **never** synced.
 
-## Auth flow
+## Security
 
-1. `lazy login` starts a local server on port 9876
-2. Opens Chrome to the web app's `/cli-auth` page
-3. User logs in via Clerk (if not already)
-4. API key is generated and redirected to `localhost:9876/callback`
-5. Token is saved to `~/.lazy-raccoon/credentials.json`
+- All config data is **encrypted at rest** (AES-256-GCM) before being stored
+- Data in transit is protected by HTTPS
+- Auth tokens are stored locally in `~/.lazy-raccoon/credentials.json`
 
 ## Environment variables
 
 | Variable | Description |
 |----------|-------------|
-| `CLAUDE_DIR` | Override `~/.claude` path (useful for testing) |
+| `CLAUDE_DIR` | Override `~/.claude` path |
 
-## Tech stack
+## Development
 
-TypeScript, Commander.js, chalk, ora, open, tsup
+```bash
+git clone https://github.com/fpuglap/lazy-raccoon-cli.git
+cd lazy-raccoon-cli
+npm install
+npm run build
+npm link
+```
+
+## License
+
+MIT
