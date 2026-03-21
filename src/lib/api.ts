@@ -4,7 +4,7 @@ async function safeJsonParse(res: Response): Promise<Record<string, unknown>> {
   try {
     return await res.json();
   } catch {
-    return {};
+    return { error: `Server returned ${res.status} with no details` };
   }
 }
 
