@@ -18,6 +18,8 @@ npm link
 - `npm run dev` — Build in watch mode
 - `npm test` — Run tests
 
+To test push/pull locally, you need a free account at [lazyraccoon.dev](https://lazyraccoon.dev). After signing up, run `lazy login` to authenticate.
+
 ## Making changes
 
 1. Fork the repo and create a branch from `main`
