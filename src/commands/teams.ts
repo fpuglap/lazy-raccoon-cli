@@ -149,13 +149,9 @@ export async function teamsLeave(slug: string) {
   const spinner = ora("Leaving team...").start();
 
   try {
-    // Get team to find our userId from the members list
     const team = await getTeam(creds, slug);
-    const selfMember = team.members?.find(
-      (m) => m.role !== undefined
-    );
 
-    // We need our user id — get it from /api/me
+    // Get our user id from /api/me
     const meRes = await fetch(`${creds.api_url}/api/me`, {
       headers: { Authorization: `Bearer ${creds.token}` },
       signal: AbortSignal.timeout(30_000),
