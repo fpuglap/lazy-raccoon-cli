@@ -2,6 +2,10 @@
 
 Thanks for your interest in contributing to Lazy Raccoon!
 
+## Prerequisites
+
+- Node.js 18 or higher
+
 ## Getting started
 
 ```bash
@@ -18,7 +22,14 @@ npm link
 - `npm run dev` — Build in watch mode
 - `npm test` — Run tests
 
-To test push/pull locally, you need a free account at [lazyraccoon.dev](https://lazyraccoon.dev). After signing up, run `lazy login` to authenticate.
+To test push/pull, you need a free account at [lazyraccoon.dev](https://lazyraccoon.dev). After signing up, run `lazy login` to authenticate.
+
+Use a temporary directory to avoid overwriting your real configs:
+
+```bash
+CLAUDE_DIR=/tmp/lazy-test lazy push --tool claude
+lazy pull --tool claude --dir /tmp/lazy-test
+```
 
 ## Making changes
 
