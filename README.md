@@ -28,7 +28,7 @@
 
 ## Why
 
-Every time you switch machines, you reconfigure your AI tools from scratch — rules, MCP servers, agents, settings. Lazy Raccoon fixes that. Push your config once, pull it anywhere.
+Every time you switch machines or onboard a new teammate, you reconfigure your AI tools from scratch — rules, MCP servers, agents, settings. Lazy Raccoon fixes that. Push your config once, pull it anywhere. Share it across teams.
 
 ## Supported tools
 
