@@ -1,4 +1,3 @@
-import ora from "ora";
 import chalk from "chalk";
 import { requireAuth } from "../lib/credentials.js";
 import { readConfig } from "../lib/config-reader.js";
@@ -8,6 +7,7 @@ import { mergeConfigs } from "../lib/merge.js";
 import { confirm } from "../lib/prompt.js";
 import { getConfigName, DEFAULT_TOOL } from "../lib/constants.js";
 import { getTool } from "../lib/tools/index.js";
+import { withSpinner } from "../lib/spinner.js";
 import type { ConfigData } from "../types/index.js";
 
 export async function push(options: { force?: boolean; profile?: string; tool?: string; team?: string }) {
@@ -24,15 +24,11 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
   // Resolve team slug to teamId
   let teamId: string | undefined;
   if (options.team) {
-    const spinnerTeam = ora("Resolving team...").start();
-    try {
-      const team = await getTeam(creds, options.team);
-      teamId = team.id;
-      spinnerTeam.stop();
-    } catch (err) {
-      spinnerTeam.fail(chalk.red(err instanceof Error ? err.message : "Failed to resolve team"));
-      process.exit(1);
-    }
+    teamId = await withSpinner("Resolving team...", async (s) => {
+      const team = await getTeam(creds, options.team!);
+      s.stop();
+      return team.id;
+    });
   }
 
   console.log(chalk.cyan(`Tool: ${tool.label}`));
@@ -44,45 +40,43 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
   }
   console.log();
 
-  const spinner = ora("Reading local config...").start();
-  const localData = readConfig(tool, dir);
+  const localData = await withSpinner("Reading local config...", async (s) => {
+    const data = readConfig(tool, dir);
+    if (Object.values(data).every((v) => v === undefined)) {
+      throw new Error(`No ${tool.label} configuration found at ${dir}`);
+    }
 
-  if (Object.values(localData).every((v) => v === undefined)) {
-    spinner.fail(chalk.red(`No ${tool.label} configuration found at ${dir}`));
-    process.exit(1);
-  }
+    // Fetch cloud config for diff/merge
+    s.text = "Fetching cloud config...";
+    let cloudData: ConfigData | null = null;
+    try {
+      const cloudConfig = await pullConfig(creds, configName, toolId, teamId);
+      cloudData = (cloudConfig.data as ConfigData) ?? null;
+    } catch {
+      // No cloud config yet (first push)
+    }
+    s.stop();
 
-  // Fetch cloud config for diff/merge
-  spinner.text = "Fetching cloud config...";
-  let cloudData: ConfigData | null = null;
-  try {
-    const cloudConfig = await pullConfig(creds, configName, toolId, teamId);
-    cloudData = (cloudConfig.data as ConfigData) ?? null;
-  } catch {
-    // No cloud config yet (first push)
-  }
-  spinner.stop();
+    return { local: data, cloud: cloudData };
+  });
 
   let dataToPush: ConfigData;
 
-  if (!cloudData) {
-    // First push — no merge needed
+  if (!localData.cloud) {
     console.log(chalk.cyan("No cloud config found. This will be the first push."));
-    dataToPush = localData;
+    dataToPush = localData.local;
   } else if (options.force) {
-    // Force: full overwrite, cloud becomes exact copy of local
-    const diff = diffConfigs(tool, cloudData, localData);
+    const diff = diffConfigs(tool, localData.cloud, localData.local);
     if (!diff.hasChanges) {
       console.log(chalk.gray("No changes to push."));
       return;
     }
     console.log(formatDiff(tool, diff, "push"));
     console.log(chalk.yellow("  --force: Cloud will be fully overwritten with local config.\n"));
-    dataToPush = localData;
+    dataToPush = localData.local;
   } else {
-    // Merge: local on top of cloud (local wins, cloud-only preserved)
-    const merged = mergeConfigs(tool, cloudData, localData);
-    const diff = diffConfigs(tool, cloudData, merged);
+    const merged = mergeConfigs(tool, localData.cloud, localData.local);
+    const diff = diffConfigs(tool, localData.cloud, merged);
     if (!diff.hasChanges) {
       console.log(chalk.gray("No changes to push."));
       return;
@@ -97,14 +91,8 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
     return;
   }
 
-  const pushSpinner = ora("Pushing config...").start();
-  try {
+  await withSpinner("Pushing config...", async (s) => {
     const result = await pushConfig(creds, configName, toolId, dataToPush, teamId);
-    pushSpinner.succeed(chalk.green(`Config pushed (v${result.version})`));
-  } catch (err) {
-    pushSpinner.fail(
-      chalk.red(err instanceof Error ? err.message : "Failed to push config")
-    );
-    process.exit(1);
-  }
+    s.succeed(chalk.green(`Config pushed (v${result.version})`));
+  });
 }

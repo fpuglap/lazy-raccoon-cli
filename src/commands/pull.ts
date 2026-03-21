@@ -1,4 +1,3 @@
-import ora from "ora";
 import chalk from "chalk";
 import { requireAuth } from "../lib/credentials.js";
 import { pullConfig, getTeam } from "../lib/api.js";
@@ -9,6 +8,7 @@ import { mergeConfigs } from "../lib/merge.js";
 import { confirm } from "../lib/prompt.js";
 import { getConfigName, DEFAULT_TOOL } from "../lib/constants.js";
 import { getTool } from "../lib/tools/index.js";
+import { withSpinner } from "../lib/spinner.js";
 import type { ConfigData } from "../types/index.js";
 
 export async function pull(options: {
@@ -32,15 +32,11 @@ export async function pull(options: {
   // Resolve team slug to teamId
   let teamId: string | undefined;
   if (options.team) {
-    const spinnerTeam = ora("Resolving team...").start();
-    try {
-      const team = await getTeam(creds, options.team);
-      teamId = team.id;
-      spinnerTeam.stop();
-    } catch (err) {
-      spinnerTeam.fail(chalk.red(err instanceof Error ? err.message : "Failed to resolve team"));
-      process.exit(1);
-    }
+    teamId = await withSpinner("Resolving team...", async (s) => {
+      const team = await getTeam(creds, options.team!);
+      s.stop();
+      return team.id;
+    });
   }
 
   console.log(chalk.cyan(`Tool: ${tool.label}`));
@@ -58,24 +54,15 @@ export async function pull(options: {
   const localData = readConfig(tool, dir);
 
   // Fetch cloud config
-  const spinner = ora("Fetching cloud config...").start();
-  let cloudConfig;
-  try {
-    cloudConfig = await pullConfig(creds, configName, toolId, teamId);
-  } catch (err) {
-    spinner.fail(
-      chalk.red(err instanceof Error ? err.message : "Failed to pull config")
-    );
-    process.exit(1);
-  }
+  const cloudConfig = await withSpinner("Fetching cloud config...", async () => {
+    return await pullConfig(creds, configName, toolId, teamId);
+  });
   const cloudData = (cloudConfig.data as ConfigData) ?? {};
-  spinner.stop();
 
   let dataToWrite: ConfigData;
   let forceWrite = false;
 
   if (options.force) {
-    // Force: cloud fully overwrites local
     const diff = diffConfigs(tool, localData, cloudData);
     if (!diff.hasChanges) {
       console.log(chalk.gray("No changes to pull."));
@@ -86,7 +73,6 @@ export async function pull(options: {
     dataToWrite = cloudData;
     forceWrite = true;
   } else {
-    // Merge: cloud on top of local (cloud wins, local-only preserved)
     const merged = mergeConfigs(tool, localData, cloudData);
     const diff = diffConfigs(tool, localData, merged);
     if (!diff.hasChanges) {
@@ -103,24 +89,16 @@ export async function pull(options: {
     return;
   }
 
-  const writeSpinner = ora("Writing config...").start();
-  try {
+  await withSpinner("Writing config...", async (s) => {
     const backupPath = writeConfig(tool, dataToWrite, {
       force: forceWrite,
       dir,
     });
 
     if (backupPath) {
-      writeSpinner.succeed(
-        chalk.green(`Config pulled (v${cloudConfig.version}). Backup: ${backupPath}`)
-      );
+      s.succeed(chalk.green(`Config pulled (v${cloudConfig.version}). Backup: ${backupPath}`));
     } else {
-      writeSpinner.succeed(chalk.green(`Config pulled (v${cloudConfig.version})`));
+      s.succeed(chalk.green(`Config pulled (v${cloudConfig.version})`));
     }
-  } catch (err) {
-    writeSpinner.fail(
-      chalk.red(err instanceof Error ? err.message : "Failed to write config")
-    );
-    process.exit(1);
-  }
+  });
 }
