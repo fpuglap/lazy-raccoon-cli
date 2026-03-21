@@ -65,7 +65,7 @@ lazy pull
 | `lazy pull` | Download cloud config to local |
 | `lazy status` | List all synced configs |
 | `lazy whoami` | Show current logged-in user |
-| `lazy teams list` | List your teams |
+| `lazy teams` | List your teams |
 | `lazy teams create <name>` | Create a new team |
 | `lazy teams info <slug>` | Show team members |
 | `lazy teams invite <slug> <email>` | Invite someone to a team |
