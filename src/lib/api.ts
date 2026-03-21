@@ -97,6 +97,19 @@ export async function listConfigs(
   return res.json();
 }
 
+// User API
+
+export async function getMe(creds: Credentials): Promise<{ email: string; username: string | null }> {
+  const res = await request(creds, "/me");
+
+  if (!res.ok) {
+    const body = await safeJsonParse(res);
+    throw new Error((body.error as string) || "Could not fetch user info");
+  }
+
+  return res.json();
+}
+
 // Teams API
 
 export interface TeamResponse {
