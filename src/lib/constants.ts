@@ -9,6 +9,9 @@ export const DEFAULT_API_URL = "https://lazyraccoon.dev";
 
 export const DEFAULT_TOOL = "claude";
 
+export const AUTH_CALLBACK_PORT = 9876;
+export const AUTH_TIMEOUT_MS = 120_000;
+
 export function getConfigName(profile?: string): string {
   return profile || "default";
 }

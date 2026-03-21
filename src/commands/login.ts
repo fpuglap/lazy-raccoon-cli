@@ -4,9 +4,9 @@ import open from "open";
 import ora from "ora";
 import chalk from "chalk";
 import { saveCredentials } from "../lib/credentials.js";
-import { DEFAULT_API_URL } from "../lib/constants.js";
+import { DEFAULT_API_URL, AUTH_CALLBACK_PORT, AUTH_TIMEOUT_MS } from "../lib/constants.js";
 
-const PORT = 9876;
+const PORT = AUTH_CALLBACK_PORT;
 
 export async function login() {
   const apiUrl = DEFAULT_API_URL;
@@ -67,7 +67,7 @@ export async function login() {
 
     server.listen(PORT, () => {
       // Open browser
-      open(authUrl, { app: { name: "google chrome" } }).catch(() => {
+      open(authUrl).catch(() => {
         spinner.stop();
         console.log(
           chalk.yellow(
@@ -81,14 +81,26 @@ export async function login() {
     const timeout = setTimeout(() => {
       server.close();
       reject(new Error("Login timed out. Try again."));
-    }, 120_000);
+    }, AUTH_TIMEOUT_MS);
     timeout.unref();
   });
 
-  // TODO: decode token to get email, or fetch from API
+  // Fetch actual email from API
+  let email = "authenticated";
+  try {
+    const res = await fetch(`${apiUrl}/api/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (res.ok) {
+      const me = await res.json();
+      if (me.email) email = me.email;
+    }
+  } catch {}
+
   saveCredentials({
     token,
-    email: "authenticated",
+    email,
     api_url: apiUrl,
   });
 
