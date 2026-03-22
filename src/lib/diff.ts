@@ -160,3 +160,65 @@ export function formatDiff(
   lines.push("");
   return lines.join("\n");
 }
+
+export function generateChangeSummary(
+  tool: ToolDefinition,
+  diff: DiffResult
+): string {
+  const labels: Record<string, string> = {};
+  for (const file of tool.files) {
+    labels[file.key] = file.label;
+  }
+
+  const added: string[] = [];
+  const modified: string[] = [];
+  const removed: string[] = [];
+
+  for (const field of diff.fields) {
+    const label = labels[field.field] || field.field;
+    switch (field.change) {
+      case "added":
+        if (field.details?.added.length) {
+          for (const f of field.details.added) added.push(`${label}/${f}`);
+        } else {
+          added.push(label);
+        }
+        break;
+      case "removed":
+        if (field.details?.removed.length) {
+          for (const f of field.details.removed) removed.push(`${label}/${f}`);
+        } else {
+          removed.push(label);
+        }
+        break;
+      case "modified":
+        if (field.details) {
+          for (const f of field.details.added) added.push(`${label}/${f}`);
+          for (const f of field.details.removed) removed.push(`${label}/${f}`);
+          for (const f of field.details.modified) modified.push(`${label}/${f}`);
+        } else {
+          modified.push(label);
+        }
+        break;
+    }
+  }
+
+  const parts: string[] = [];
+  if (added.length) {
+    parts.push(added.length <= 3
+      ? `Added ${added.join(", ")}`
+      : `Added ${added.length} files`);
+  }
+  if (modified.length) {
+    parts.push(modified.length <= 3
+      ? `Modified ${modified.join(", ")}`
+      : `Modified ${modified.length} files`);
+  }
+  if (removed.length) {
+    parts.push(removed.length <= 3
+      ? `Removed ${removed.join(", ")}`
+      : `Removed ${removed.length} files`);
+  }
+
+  return parts.join(", ") || "No changes";
+}
