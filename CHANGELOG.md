@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2
+
+- Add push messages: `lazy push -m "description"` to attach a message to each version
+- Auto-generate change summary from diff (e.g., "Added commands/refactor.md, Modified settings.json")
+- Send message and changeSummary with push API
+- Add tests for change summary generation
+
 ## 0.3.1
 
 - Fix login to fetch real email from API instead of placeholder
