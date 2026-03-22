@@ -55,6 +55,7 @@ program
   .option("-p, --profile <name>", "Profile to sync (e.g. adoreal)")
   .option("-t, --tool <id>", "AI tool (claude, cursor, copilot, gemini, windsurf, cline)", "claude")
   .option("-T, --team <slug>", "Push to a team config")
+  .option("-m, --message <text>", "Add a message describing this change")
   .action(push);
 
 program

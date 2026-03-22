@@ -2,15 +2,15 @@ import chalk from "chalk";
 import { requireAuth } from "../lib/credentials.js";
 import { readConfig } from "../lib/config-reader.js";
 import { pushConfig, pullConfig, getTeam } from "../lib/api.js";
-import { diffConfigs, formatDiff } from "../lib/diff.js";
+import { diffConfigs, formatDiff, generateChangeSummary } from "../lib/diff.js";
 import { mergeConfigs } from "../lib/merge.js";
 import { confirm } from "../lib/prompt.js";
 import { getConfigName, DEFAULT_TOOL } from "../lib/constants.js";
 import { getTool } from "../lib/tools/index.js";
 import { withSpinner } from "../lib/spinner.js";
-import type { ConfigData } from "../types/index.js";
+import type { ConfigData, DiffResult } from "../types/index.js";
 
-export async function push(options: { force?: boolean; profile?: string; tool?: string; team?: string }) {
+export async function push(options: { force?: boolean; profile?: string; tool?: string; team?: string; message?: string }) {
   const creds = requireAuth();
   const toolId = options.tool || DEFAULT_TOOL;
   const tool = getTool(toolId);
@@ -61,12 +61,13 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
   });
 
   let dataToPush: ConfigData;
+  let diff: DiffResult | null = null;
 
   if (!localData.cloud) {
     console.log(chalk.cyan("No cloud config found. This will be the first push."));
     dataToPush = localData.local;
   } else if (options.force) {
-    const diff = diffConfigs(tool, localData.cloud, localData.local);
+    diff = diffConfigs(tool, localData.cloud, localData.local);
     if (!diff.hasChanges) {
       console.log(chalk.gray("No changes to push."));
       return;
@@ -76,7 +77,7 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
     dataToPush = localData.local;
   } else {
     const merged = mergeConfigs(tool, localData.cloud, localData.local);
-    const diff = diffConfigs(tool, localData.cloud, merged);
+    diff = diffConfigs(tool, localData.cloud, merged);
     if (!diff.hasChanges) {
       console.log(chalk.gray("No changes to push."));
       return;
@@ -91,8 +92,13 @@ export async function push(options: { force?: boolean; profile?: string; tool?: 
     return;
   }
 
+  // Generate change summary from diff
+  const changeSummary = diff
+    ? generateChangeSummary(tool, diff)
+    : "Initial config";
+
   await withSpinner("Pushing config...", async (s) => {
-    const result = await pushConfig(creds, configName, toolId, dataToPush, teamId);
+    const result = await pushConfig(creds, configName, toolId, dataToPush, teamId, options.message, changeSummary);
     s.succeed(chalk.green(`Config pushed (v${result.version})`));
   });
 }

@@ -46,11 +46,18 @@ export async function pushConfig(
   name: string,
   tool: string,
   data: ConfigData,
-  teamId?: string
+  teamId?: string,
+  message?: string,
+  changeSummary?: string
 ): Promise<ConfigResponse> {
   const res = await request(creds, "/configs", {
     method: "POST",
-    body: JSON.stringify({ name, tool, data, ...(teamId && { teamId }) }),
+    body: JSON.stringify({
+      name, tool, data,
+      ...(teamId && { teamId }),
+      ...(message && { message }),
+      ...(changeSummary && { changeSummary }),
+    }),
   });
 
   if (!res.ok) {
