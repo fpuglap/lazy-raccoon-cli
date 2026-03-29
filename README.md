@@ -22,8 +22,19 @@
   <a href="https://lazyraccoon.dev/dashboard"><strong>Dashboard</strong></a>
 </p>
 
+<h4 align="center">🚀 Push your configs</h4>
 <p align="center">
-  <img src="./assets/demo.gif" alt="Lazy Raccoon CLI demo" width="700" />
+  <img src="./assets/push.gif" alt="lazy push" width="700" />
+</p>
+
+<h4 align="center">🐿️ Pull them anywhere</h4>
+<p align="center">
+  <img src="./assets/pull.gif" alt="lazy pull" width="700" />
+</p>
+
+<h4 align="center">🎯 Check sync status</h4>
+<p align="center">
+  <img src="./assets/status.gif" alt="lazy status" width="700" />
 </p>
 
 ## Why
