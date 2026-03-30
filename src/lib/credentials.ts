@@ -15,7 +15,7 @@ export function getCredentials(): Credentials | null {
 
 export function saveCredentials(credentials: Credentials): void {
   mkdirSync(LAZY_DIR, { recursive: true });
-  writeFileSync(CREDENTIALS_FILE, JSON.stringify(credentials, null, 2));
+  writeFileSync(CREDENTIALS_FILE, JSON.stringify(credentials, null, 2), { mode: 0o600 });
 }
 
 export function deleteCredentials(): void {
