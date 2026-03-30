@@ -12,7 +12,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "vitest run"
+    "test": "vitest run --exclude 'src/__tests__/integration/**'",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "keywords": [
     "claude",
