@@ -1,5 +1,5 @@
 import { existsSync, writeFileSync, mkdirSync, cpSync, rmSync, unlinkSync } from "fs";
-import { join, dirname } from "path";
+import { join, dirname, resolve } from "path";
 import type { ToolDefinition } from "./tools/index.js";
 import type { ConfigData } from "../types/index.js";
 
@@ -16,8 +16,11 @@ function writeFileEnsureDir(filePath: string, content: string): void {
 }
 
 function writeDirFiles(dirPath: string, files: Record<string, string>): void {
+  const resolvedBase = resolve(dirPath);
   for (const [relativePath, content] of Object.entries(files)) {
-    writeFileEnsureDir(join(dirPath, relativePath), content);
+    const target = resolve(join(dirPath, relativePath));
+    if (!target.startsWith(resolvedBase)) continue;
+    writeFileEnsureDir(target, content);
   }
 }
 
