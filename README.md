@@ -152,6 +152,8 @@ Sensitive files (`.env`, API keys, tokens, caches, logs) are **never** synced.
 | Variable | Description |
 |----------|-------------|
 | `CLAUDE_DIR` | Override `~/.claude` path |
+| `LAZY_RACCOON_API_URL` | Override API URL (default: `https://lazyraccoon.dev`) |
+| `LAZY_RACCOON_DIR` | Override credentials directory (default: `~/.lazy-raccoon`) |
 
 ## Development
 
