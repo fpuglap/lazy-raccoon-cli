@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3
+
+- Fix path traversal vulnerability in config writer (directory file paths are now validated)
+- Fix credentials file permissions to owner-only (0o600)
+- Update README with separate demo GIFs for push, pull, and status
+
 ## 0.3.2
 
 - Add push messages: `lazy push -m "description"` to attach a message to each version
