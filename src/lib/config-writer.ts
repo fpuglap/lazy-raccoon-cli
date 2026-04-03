@@ -1,5 +1,5 @@
-import { existsSync, writeFileSync, mkdirSync, cpSync, rmSync, unlinkSync } from "fs";
-import { join, dirname, resolve } from "path";
+import { existsSync, writeFileSync, mkdirSync, cpSync, rmSync, unlinkSync, statSync, readdirSync } from "fs";
+import { join, dirname, resolve, basename } from "path";
 import type { ToolDefinition } from "./tools/index.js";
 import type { ConfigData } from "../types/index.js";
 
@@ -7,12 +7,35 @@ function backupDir(dir: string): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const backupPath = `${dir}.backup.${timestamp}`;
   cpSync(dir, backupPath, { recursive: true });
+
+  const parentDir = dirname(dir);
+  const baseName = basename(dir);
+  
+  try {
+    const backups = readdirSync(parentDir)
+      .filter(name => name.startsWith(`${baseName}.backup.`))
+      .sort((a, b) => b.localeCompare(a)); // sort descending
+
+    if (backups.length > 5) {
+      const toDelete = backups.slice(5);
+      for (const oldBackup of toDelete) {
+        rmSync(join(parentDir, oldBackup), { recursive: true, force: true });
+      }
+    }
+  } catch (error) {
+    console.error("Warning: Failed to cleanup old backups", error);
+  }
+
   return backupPath;
 }
 
 function writeFileEnsureDir(filePath: string, content: string): void {
   mkdirSync(dirname(filePath), { recursive: true });
-  writeFileSync(filePath, content);
+  let mode: number | undefined;
+  if (existsSync(filePath)) {
+    mode = statSync(filePath).mode;
+  }
+  writeFileSync(filePath, content, mode !== undefined ? { mode } : {});
 }
 
 function writeDirFiles(dirPath: string, files: Record<string, string>): void {

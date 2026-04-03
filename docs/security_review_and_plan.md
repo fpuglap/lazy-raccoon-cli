@@ -21,9 +21,9 @@ El trabajo será subdividido en ramas creadas a partir de la rama actual (`revie
 - [ ] Escribir test automatizados `api.test.ts`.
 
 ### 2. `feature/file-operations`
-- [ ] Implementar preservación del modo/permisos del archivo al sobrescribir `config-writer.ts`.
-- [ ] Desarrollar sistema de limpieza guardando un máximo de 5 copias antiguas en disco.
-- [ ] Escribir tests en `config-writer.test.ts`.
+- [x] Implementar preservación del modo/permisos del archivo al sobrescribir `config-writer.ts`.
+- [x] Desarrollar sistema de limpieza guardando un máximo de 5 copias antiguas en disco.
+- [x] Escribir tests en `config-writer.test.ts`.
 
 ### 3. `feature/secure-auth`
 - [ ] Utilizar `@node-rs/keyring` (multiplataforma) para el token `credentials.ts`.
