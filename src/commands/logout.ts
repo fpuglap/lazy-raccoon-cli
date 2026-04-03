@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { deleteCredentials, getCredentials } from "../lib/credentials.js";
 
 export async function logout() {
-  const creds = getCredentials();
+  const creds = await getCredentials();
   if (!creds) {
     console.log("Already logged out.");
     return;

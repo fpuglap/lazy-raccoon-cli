@@ -4,7 +4,7 @@ import { listConfigs } from "../lib/api.js";
 import { withSpinner } from "../lib/spinner.js";
 
 export async function status() {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   const configs = await withSpinner("Fetching configs...", async (s) => {
     const result = await listConfigs(creds);

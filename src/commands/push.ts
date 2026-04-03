@@ -11,7 +11,7 @@ import { withSpinner } from "../lib/spinner.js";
 import type { ConfigData, DiffResult } from "../types/index.js";
 
 export async function push(options: { force?: boolean; profile?: string; tool?: string; team?: string; message?: string }) {
-  const creds = requireAuth();
+  const creds = await requireAuth();
   const toolId = options.tool || DEFAULT_TOOL;
   const tool = getTool(toolId);
   const dir = options.profile

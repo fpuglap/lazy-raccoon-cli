@@ -4,7 +4,7 @@ import { getMe } from "../lib/api.js";
 import { withSpinner } from "../lib/spinner.js";
 
 export async function whoami() {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   const user = await withSpinner("Fetching user info...", async (s) => {
     const me = await getMe(creds);

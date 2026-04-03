@@ -18,7 +18,7 @@ export async function pull(options: {
   tool?: string;
   team?: string;
 }) {
-  const creds = requireAuth();
+  const creds = await requireAuth();
   const toolId = options.tool || DEFAULT_TOOL;
   const tool = getTool(toolId);
   const dir = options.dir

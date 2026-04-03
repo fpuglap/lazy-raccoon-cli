@@ -26,10 +26,10 @@ El trabajo será subdividido en ramas creadas a partir de la rama actual (`revie
 - [ ] Escribir tests en `config-writer.test.ts`.
 
 ### 3. `feature/secure-auth`
-- [ ] Utilizar `@node-rs/keyring` (multiplataforma) para el token `credentials.ts`.
-- [ ] Restrigir `login.ts` para mitigar vulnerabilidades locales (limit at localhost interface).
-- [ ] Implementar mecanismo de fallback si hay migración pendiente.
-- [ ] Escribir tests correspondientes.
+- [x] Utilizar `@node-rs/keyring` o `keytar` (multiplataforma) para el token `credentials.ts`.
+- [x] Restrigir `login.ts` para mitigar vulnerabilidades locales (limit at localhost interface).
+- [x] Implementar mecanismo de fallback si hay migración pendiente.
+- [x] Escribir tests correspondientes.
 
 ## Avances
 - **Documentación Base**: ✔ Completada. En la rama `review`.

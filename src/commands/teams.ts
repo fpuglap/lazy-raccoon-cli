@@ -20,7 +20,7 @@ function roleColor(role: string) {
 }
 
 export async function teamsList() {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   const teams = await withSpinner("Fetching teams...", async (s) => {
     const result = await listTeams(creds);
@@ -52,7 +52,7 @@ export async function teamsList() {
 }
 
 export async function teamsCreate(name: string) {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   await withSpinner("Creating team...", async (s) => {
     const team = await createTeam(creds, name);
@@ -61,7 +61,7 @@ export async function teamsCreate(name: string) {
 }
 
 export async function teamsInfo(slug: string) {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   const team = await withSpinner("Fetching team...", async (s) => {
     const result = await getTeam(creds, slug);
@@ -97,7 +97,7 @@ export async function teamsInfo(slug: string) {
 }
 
 export async function teamsInvite(slug: string, email: string) {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   await withSpinner("Sending invitation...", async (s) => {
     const result = await inviteToTeam(creds, slug, email);
@@ -107,7 +107,7 @@ export async function teamsInvite(slug: string, email: string) {
 }
 
 export async function teamsLeave(slug: string) {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   const confirmed = await confirm(chalk.yellow(`Leave team "${slug}"?`));
   if (!confirmed) {
@@ -128,7 +128,7 @@ export async function teamsLeave(slug: string) {
 }
 
 export async function teamsInvitations() {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   const invitations = await withSpinner("Fetching invitations...", async (s) => {
     const result = await listInvitations(creds);
@@ -161,7 +161,7 @@ export async function teamsInvitations() {
 }
 
 export async function teamsAccept(id: string) {
-  const creds = requireAuth();
+  const creds = await requireAuth();
 
   await withSpinner("Accepting invitation...", async (s) => {
     const result = await acceptInvite(creds, id);
