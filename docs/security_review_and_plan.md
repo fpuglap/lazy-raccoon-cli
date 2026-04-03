@@ -16,9 +16,9 @@ Este documento detiene los puntos de seguridad y áreas de mejora descubiertos e
 El trabajo será subdividido en ramas creadas a partir de la rama actual (`review`):
 
 ### 1. `feature/api-resilience`
-- [ ] Implementar reintentos (retry mechansim) en llamadas de API (`api.ts`).
-- [ ] Incorporar validaciones estrictas tipo `zod` para las respuestas JSON.
-- [ ] Escribir test automatizados `api.test.ts`.
+- [x] Implementar reintentos (retry mechansim) en llamadas de API (`api.ts`).
+- [x] Incorporar validaciones estrictas tipo `zod` para las respuestas JSON.
+- [x] Escribir test automatizados `api.test.ts`.
 
 ### 2. `feature/file-operations`
 - [ ] Implementar preservación del modo/permisos del archivo al sobrescribir `config-writer.ts`.
@@ -33,3 +33,4 @@ El trabajo será subdividido en ramas creadas a partir de la rama actual (`revie
 
 ## Avances
 - **Documentación Base**: ✔ Completada. En la rama `review`.
+- **API Resilience**: ✔ Completada. En la rama `feature/api-resilience`.
