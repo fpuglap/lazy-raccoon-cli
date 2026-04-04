@@ -2,13 +2,13 @@ import { z } from "zod";
 import type { Credentials, ConfigData, ConfigResponse } from "../types/index.js";
 
 const ConfigResponseSchema = z.object({
-  id: z.string().optional(), // allow optional depending on backend variation
+  id: z.string(), // allow optional depending on backend variation
   name: z.string(),
   tool: z.string().optional(),
   version: z.number(),
   hash: z.string().optional(),
   data: z.record(z.string(), z.any()).optional(),
-  updatedAt: z.string().optional(),
+  updatedAt: z.string(),
 });
 
 const MeResponseSchema = z.object({
@@ -39,7 +39,7 @@ const InvitationResponseSchema = z.object({
   role: z.string(),
   status: z.string(),
   invitedByEmail: z.string(),
-  invitedByUsername: z.string().nullable().optional(),
+  invitedByUsername: z.string().nullable(),
 });
 
 async function safeJsonParse(res: Response): Promise<Record<string, unknown>> {
@@ -79,6 +79,7 @@ async function request(
       }
 
       if (!res.ok) {
+        await res.text().catch(() => {});
         throw new Error(`Server error: ${res.status}`);
       }
     } catch (err) {

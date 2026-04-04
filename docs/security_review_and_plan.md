@@ -16,7 +16,7 @@ Este documento detiene los puntos de seguridad y áreas de mejora descubiertos e
 El trabajo será subdividido en ramas creadas a partir de la rama actual (`review`):
 
 ### 1. `feature/api-resilience`
-- [x] Implementar reintentos (retry mechansim) en llamadas de API (`api.ts`).
+- [x] Implementar reintentos (retry mechanism) en llamadas de API (`api.ts`).
 - [x] Incorporar validaciones estrictas tipo `zod` para las respuestas JSON.
 - [x] Escribir test automatizados `api.test.ts`.
 
