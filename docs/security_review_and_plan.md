@@ -1,52 +1,52 @@
 # Security Review and Improvements Plan
 
-Este documento detiene los puntos de seguridad y áreas de mejora descubiertos en el proyecto, el plan para abordarlos, y el estado de avance. 
+This document details the security points and areas for improvement discovered in the project, the plan to address them, and the progress status.
 
-## Resumen de Problemas Detectados
+## Summary of Detected Issues
 
-1. **Reintentos en Conexión**: Falta de resiliencia en la API para sortear cortes temporales.
-2. **Validación de Zod en la API**: Falta de comprobación estricta de las estructuras de datos JSON recibidos.
-3. **Pérdida de Metadatos de Archivo**: `lazy pull` reemplaza archivos y pierde sus permisos originales (`chmod +x`).
-4. **Limpieza Automática de Backups**: Multiples backups de carpetas se acumulan en disco sin un mecanismo de limpieza.
-5. **Almacenamiento Inseguro de Credenciales**: El token JWT se guarda en texto plano (`credentials.json`).
-6. **Flujo de Login Local Inseguro**: Falta restricción y validación estricta en el servidor temporal del CLI para recibir el Token.
+1. **Connection Retries**: Lack of resilience in the API to overcome temporary outages.
+2. **Zod Validation in the API**: Lack of strict checking of received JSON data structures.
+3. **Loss of File Metadata**: `lazy pull` replaces files and loses their original permissions (`chmod +x`).
+4. **Automatic Backup Cleanup**: Multiple folder backups accumulate on disk without a cleanup mechanism.
+5. **Insecure Credential Storage**: The JWT token is saved in plain text (`credentials.json`).
+6. **Insecure Local Login Flow**: Lack of strict restriction and validation on the CLI's temporary server to receive the Token.
 
-## Plan de Ejecución y Ramas (Branches)
+## Execution Plan and Branches
 
-El trabajo será subdividido en ramas creadas a partir de la rama actual (`review`):
+The work will be sub-divided into branches created from the current branch (`review`):
 
 ### 1. `feature/api-resilience`
-- [x] Implementar reintentos (retry mechansim) en llamadas de API (`api.ts`).
-- [x] Incorporar validaciones estrictas tipo `zod` para las respuestas JSON.
-- [x] Escribir test automatizados `api.test.ts`.
+- [x] Implement retries (retry mechanism) in API calls (`api.ts`).
+- [x] Incorporate strict validations like `zod` for JSON responses.
+- [x] Write automated tests `api.test.ts`.
 
 ### 2. `feature/file-operations`
-- [x] Implementar preservación del modo/permisos del archivo al sobrescribir `config-writer.ts`.
-- [x] Desarrollar sistema de limpieza guardando un máximo de 5 copias antiguas en disco.
-- [x] Escribir tests en `config-writer.test.ts`.
+- [x] Implement file mode/permissions preservation when overwriting `config-writer.ts`.
+- [x] Develop a cleanup system keeping a maximum of 5 old copies on disk.
+- [x] Write tests in `config-writer.test.ts`.
 
 ### 3. `feature/secure-auth`
-- [x] Utilizar `@node-rs/keyring` o `keytar` (multiplataforma) para el token `credentials.ts`.
-- [x] Restrigir `login.ts` para mitigar vulnerabilidades locales (limit at localhost interface).
-- [x] Implementar mecanismo de fallback si hay migración pendiente.
-- [x] Escribir tests correspondientes.
+- [x] Use `@node-rs/keyring` or `keytar` (cross-platform) for the token in `credentials.ts`.
+- [x] Restrict `login.ts` to mitigate local vulnerabilities (limit at localhost interface).
+- [x] Implement a fallback mechanism if there is a pending migration.
+- [x] Write corresponding tests.
 
-## Avances
-- **Documentación Base**: ✔ Completada. En la rama `review`.
-- **API Resilience**: ✔ Completada. En la rama `feature/api-resilience`.
-- **File Operations**: ✔ Completada. En la rama `feature/file-operations`.
-- **Secure Auth**: ✔ Completada. En la rama `feature/secure-auth`.
+## Progress
+- **Base Documentation**: ✔ Completed. In the `review` branch.
+- **API Resilience**: ✔ Completed. In the `feature/api-resilience` branch.
+- **File Operations**: ✔ Completed. In the `feature/file-operations` branch.
+- **Secure Auth**: ✔ Completed. In the `feature/secure-auth` branch.
 
-## Decisiones de Arquitectura y Estándares de Industria
+## Architecture Decisions and Industry Standards
 
-Durante la implementación, se introdujeron cambios para alinear el CLI con las mejores prácticas de ciberseguridad, en particular:
+During implementation, changes were introduced to align the CLI with top cybersecurity best practices, in particular:
 
-### 1. Uso de `keytar` para Almacenamiento Seguro
-Antes, los tokens (JWT) se guardaban en texto plano en un archivo `.json` en el disco. Actualmente estamos usando `keytar` como adaptador para el **Keychain nativo**.
-- **Por qué `keytar`:** A pesar de haber sido etiquetado recientemente como descontinuado en GitHub, la mayoría de los CLI nativos modernos de Node.js siguen utilizándolo o dependiendo fuertemente de él. Esto se debe a que provee exposición directa al *Apple Keychain* (macOS), *Credential Manager* (Windows) y *libsecret* (Linux).
-- **El Valor Ganado:** Al vincularnos a la seguridad a nivel hardware y de sesión del SO del usuario, prevenimos vulnerabilidades catastróficas. Ninguno de los scripts sospechosos o usuarios ajenos en la misma computadora podrán extraer este JSON de la carpeta `.lazy`, dado que el SO requiere que se provea el contexto correcto (autorización) para descifrar la llave del bóveda nativa.
+### 1. Use of `keytar` for Secure Storage
+Previously, tokens (JWT) were saved in plain text in a `.json` file on disk. Currently, we are using `keytar` as an adapter for the **native Keychain**.
+- **Why `keytar`:** Despite recently being labeled as deprecated on GitHub, the majority of modern native Node.js CLIs still use it or rely heavily on it. This is because it provides direct exposure to the *Apple Keychain* (macOS), *Credential Manager* (Windows) and *libsecret* (Linux).
+- **The Earned Value:** By linking into the hardware and session-level security of the user's OS, we prevent catastrophic vulnerabilities. No suspicious scripts or unauthorized users on the same computer will be able to extract this JSON from the `.lazy` folder, given that the OS requires the correct context (authorization) to decrypt the key of the native vault.
 
-### 2. Login de Interfaz Temporal Lógica (Loopback - *127.0.0.1*)
-En el comando `lazy login`, levantamos un portal temporal interceptor en un puerto para recibir el callback luego de abrir el navegador web.
-- **Razón del cambio:** Aseguramos el servidor local indicándole explícitamente (`listen(PORT, '127.0.0.1')`) que escuche en la red de "bucle" (`localhost`). Anteriormente escuchaba indiscriminadamente, arriesgándose a ataques (e.g., inyección de tokens) desde otra computadora en una red WiFi de oficina.
-- **Estándar en Ciberseguridad (RFC 8252):** Esta implementación refleja exactamente las directivas del **OAuth 2.0 for Native Apps (RFC 8252 - *Loopback Interface Redirection*)**. En la industria, herramientas de gran adopción como `gcloud`, `aws-cli` o `vercel` usan este mismo mecanismo de levantar un servidor local (`127.0.0.1`), recibir las credenciales y cerrarlo. Resulta en una experiencia fluida (no requiere copiar/pegar un hash enorme en la pantalla) de forma 100% segura frente a ataques externos locales.
+### 2. Temporary Logical Interface Login (Loopback - *127.0.0.1*)
+In the `lazy login` command, we spin up a temporary interceptor portal on a port to receive the callback after opening the web browser.
+- **Reason for the change:** We secure the local server by explicitly instructing it (`listen(PORT, '127.0.0.1')`) to listen on the loopback network (`localhost`). Previously it listened indiscriminately, risking attacks (e.g., token injection) from another computer on an office WiFi network.
+- **Cybersecurity Standard (RFC 8252):** This implementation accurately reflects the directives of **OAuth 2.0 for Native Apps (RFC 8252 - *Loopback Interface Redirection*)**. In the industry, highly adopted tools like `gcloud`, `aws-cli` or `vercel` use this exact mechanism of spinning up a local server (`127.0.0.1`), receiving the credentials, and closing it. It results in a smooth experience (does not require copy/pasting a huge hash on the screen) in a way that is 100% secure against local external attacks.
