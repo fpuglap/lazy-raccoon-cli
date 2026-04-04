@@ -1,56 +1,47 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { existsSync, mkdirSync, writeFileSync, rmSync, statSync, readdirSync, chmodSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, rmSync, statSync, readdirSync, chmodSync, mkdtempSync } from 'fs';
 import { join } from 'path';
+import { tmpdir } from 'os';
 import { writeConfig } from '../lib/config-writer.js';
 import type { ToolDefinition } from '../lib/tools/index.js';
 
 describe('config-writer', () => {
-  const testDir = join(process.cwd(), 'tmp-test-dir');
-  const mockTool: ToolDefinition = {
-    id: "test",
-    label: "Test",
-    getDir: () => testDir,
-    files: [
-      { key: "script", path: "script.sh", type: "text", label: "script.sh" }
-    ]
-  };
+  let baseTmpDir: string;
+  let testDir: string;
+  let mockTool: ToolDefinition;
 
   beforeEach(() => {
-    if (existsSync(testDir)) {
-      rmSync(testDir, { recursive: true, force: true });
-    }
+    baseTmpDir = mkdtempSync(join(tmpdir(), 'lazy-config-writer-test-'));
+    testDir = join(baseTmpDir, 'target');
     
-    // Clean up parent dir backups too
-    const parent = process.cwd();
-    const backups = readdirSync(parent).filter(n => n.startsWith('tmp-test-dir.backup.'));
-    for (const b of backups) {
-      rmSync(join(parent, b), { recursive: true, force: true });
-    }
+    mockTool = {
+      id: "test",
+      label: "Test",
+      getDir: () => testDir,
+      files: [
+        { key: "script", path: "script.sh", type: "text", label: "script.sh" }
+      ]
+    };
   });
 
   afterEach(() => {
-    if (existsSync(testDir)) {
-      rmSync(testDir, { recursive: true, force: true });
-    }
-    const parent = process.cwd();
-    const backups = readdirSync(parent).filter(n => n.startsWith('tmp-test-dir.backup.'));
-    for (const b of backups) {
-      rmSync(join(parent, b), { recursive: true, force: true });
+    if (existsSync(baseTmpDir)) {
+      rmSync(baseTmpDir, { recursive: true, force: true });
     }
   });
 
-  it('should preserve file permissions when overwriting existing files', () => {
+  it.skipIf(process.platform === 'win32')('should preserve file permissions when overwriting existing files', () => {
     mkdirSync(testDir, { recursive: true });
     const targetFile = join(testDir, 'script.sh');
     
     writeFileSync(targetFile, 'echo "old"');
     chmodSync(targetFile, 0o755); // executable
     
-    const initialMode = statSync(targetFile).mode;
+    const initialMode = statSync(targetFile).mode & 0o777;
 
     writeConfig(mockTool, { script: 'echo "new"' }, { dir: testDir });
 
-    const newMode = statSync(targetFile).mode;
+    const newMode = statSync(targetFile).mode & 0o777;
     expect(newMode).toBe(initialMode);
   });
 
@@ -66,8 +57,7 @@ describe('config-writer', () => {
         writeConfig(mockTool, { script: `echo "${i}"` }, { dir: testDir });
     }
 
-    const parent = process.cwd();
-    const backups = readdirSync(parent).filter(n => n.startsWith('tmp-test-dir.backup.'));
+    const backups = readdirSync(baseTmpDir).filter(n => n.startsWith('target.backup.'));
     
     expect(backups.length).toBe(5);
   });
