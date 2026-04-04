@@ -33,19 +33,12 @@ lazy pull --tool claude --dir /tmp/lazy-test
 
 ## Making changes
 
-1. Create a branch from `main` (or fork the repo if you're not a collaborator)
+1. Fork the repo and create a branch from `main`
 2. Make your changes
 3. Add tests if applicable
 4. Run `npm test` to make sure tests pass
 5. Run `npm run build` to make sure it compiles
 6. Open a pull request
-
-## Pull request rules
-
-- **No direct pushes to `main`** — all changes go through a PR
-- **1 approving review required** — another collaborator must approve before merging
-- **Tests must pass** — CI runs automatically on every PR
-- **Stale reviews are dismissed** — if you push new changes after approval, it needs to be re-approved
 
 ## Adding a new tool
 
