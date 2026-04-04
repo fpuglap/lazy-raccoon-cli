@@ -65,7 +65,7 @@ export async function login() {
       }
     });
 
-    server.listen(PORT, () => {
+    server.listen(PORT, "127.0.0.1", () => {
       // Open browser
       open(authUrl).catch(() => {
         spinner.stop();
