@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.4
+
+- Add backup pruning (keep most recent 5) and file permission preservation on pull
+- Add API retry with exponential backoff on 5xx errors
+- Add Zod runtime validation for all API responses
+- Bind OAuth callback server to loopback address (127.0.0.1) for security
+
 ## 0.3.3
 
 - Fix path traversal vulnerability in config writer (directory file paths are now validated)
