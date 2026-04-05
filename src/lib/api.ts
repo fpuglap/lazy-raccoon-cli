@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Credentials, ConfigData, ConfigResponse } from "../types/index.js";
 
 const ConfigResponseSchema = z.object({
-  id: z.string(), // allow optional depending on backend variation
+  id: z.string(),
   name: z.string(),
   tool: z.string().optional(),
   version: z.number(),
