@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { existsSync, mkdirSync, writeFileSync, rmSync, statSync, readdirSync, chmodSync, mkdtempSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { writeConfig } from '../lib/config-writer.js';
-import type { ToolDefinition } from '../lib/tools/index.js';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { existsSync, mkdirSync, writeFileSync, rmSync, statSync, readdirSync, chmodSync, mkdtempSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { writeConfig } from "../lib/config-writer.js";
+import type { ToolDefinition } from "../lib/tools/index.js";
 
 describe('config-writer', () => {
   let baseTmpDir: string;
@@ -11,7 +11,7 @@ describe('config-writer', () => {
   let mockTool: ToolDefinition;
 
   beforeEach(() => {
-    baseTmpDir = mkdtempSync(join(tmpdir(), 'lazy-config-writer-test-'));
+    baseTmpDir = mkdtempSync(join(tmpdir(), "lazy-config-writer-test-"));
     testDir = join(baseTmpDir, 'target');
     
     mockTool = {
@@ -30,7 +30,7 @@ describe('config-writer', () => {
     }
   });
 
-  it.skipIf(process.platform === 'win32')('should preserve file permissions when overwriting existing files', () => {
+  it.skipIf(process.platform === "win32")("should preserve file permissions when overwriting existing files", () => {
     mkdirSync(testDir, { recursive: true });
     const targetFile = join(testDir, 'script.sh');
     
@@ -45,7 +45,7 @@ describe('config-writer', () => {
     expect(newMode).toBe(initialMode);
   });
 
-  it('should limit backups to the most recent 5', async () => {
+  it("should limit backups to the most recent 5", async () => {
     mkdirSync(testDir, { recursive: true });
     const targetFile = join(testDir, 'script.sh');
     writeFileSync(targetFile, 'echo "data"');
@@ -57,7 +57,7 @@ describe('config-writer', () => {
         writeConfig(mockTool, { script: `echo "${i}"` }, { dir: testDir });
     }
 
-    const backups = readdirSync(baseTmpDir).filter(n => n.startsWith('target.backup.'));
+    const backups = readdirSync(baseTmpDir).filter(n => n.startsWith("target.backup."));
     
     expect(backups.length).toBe(5);
   });
